@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 2.8.9)
 project(arc_viewer)
 
-find_package(catkin REQUIRED COMPONENTS roscpp arc_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp arc_msgs arc_tools)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Core REQUIRED)
 
 catkin_package(
-  CATKIN_DEPENDS roscpp geometry_msgs sensor_msgs ackermann_msgs std_msgs
+  CATKIN_DEPENDS roscpp geometry_msgs sensor_msgs ackermann_msgs std_msgs arc_msgs arc_tools
   DEPENDS system-lib
 )
 
-qt5_add_resources(QT_RESOURCES_CPP qt_resources/arrows.qrc)
+qt5_add_resources(QT_RESOURCES_CPP qt_resources/stop.qrc)
 qt5_wrap_cpp(QT_MOC_HPP src/ControlWindow.hpp
 						src/RosInterface.hpp)
 

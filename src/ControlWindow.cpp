@@ -2,60 +2,130 @@
 
 ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
     : QWidget(parent),
-      m_RosInterface(argc, argv, "/rovio/odometry")
+      RosInterface_(argc, argv)
 {
-    //Closing Button.
-    p_quitButton = new QPushButton("&Quit");
-    //Set up the Position Display - X.
-    p_xLayout = new QHBoxLayout();
-    p_xLabel = new QLabel();
-    p_xLabel->setText(tr("X:"));
-    p_xDisplay = new QLineEdit();
-    p_xDisplay->setText(tr("0.0"));
-    p_xLayout->addWidget(p_xLabel);
-    p_xLayout->addWidget(p_xDisplay);
-    //Set up the Position Display - Y.
-    p_yLayout = new QHBoxLayout();
-    p_yLabel = new QLabel();
-    p_yLabel->setText(tr("Y:"));
-    p_yDisplay = new QLineEdit();
-    p_yDisplay->setText(tr("0.0"));
-    p_yLayout->addWidget(p_yLabel);
-    p_yLayout->addWidget(p_yDisplay);
-    //Set up the Position Display - Z.
-    p_zLayout = new QHBoxLayout();
-    p_zLabel = new QLabel();
-    p_zLabel->setText(tr("Z: "));
-    p_zDisplay = new QLineEdit();
-    p_zDisplay->setText(tr("0.0"));
-    p_zLayout->addWidget(p_zLabel);
-    p_zLayout->addWidget(p_zDisplay);
-    //Creating display layout.
+    //Init layouts.
     leftLayout = new QVBoxLayout();
-    leftLayout->addLayout(p_xLayout);
-    leftLayout->addLayout(p_yLayout);
-    leftLayout->addLayout(p_zLayout);
-    leftLayout->addWidget(p_quitButton, 6);
-    //Merging main layout.
+    rightLayout = new QVBoxLayout();
     mainLayout = new QHBoxLayout();
+    //Adding velocity labels.
+    setVelocityDisplay();
+    //Adding deviation from path and velocity labels.
+    setDeviationDisplay();
+    //Stop Button.
+    setStopButton();
+    //Merging main layout.
     mainLayout->addLayout(leftLayout);
+    mainLayout->addLayout(rightLayout);
     setLayout(mainLayout);
     //Init window.
     show();
     setWindowTitle(tr("Control Window"));
     //Connecting actions.
-    connect(p_quitButton,  &QPushButton::clicked, this, &ControlWindow::close);
-    connect(&m_RosInterface, &RosInterface::newPose, this, &ControlWindow::updatePoseDisplay);
+    connect(&RosInterface_, &RosInterface::newVel, this, &ControlWindow::updateVelDisplay);
+    connect(&RosInterface_, &RosInterface::newDev, this, &ControlWindow::updateDevDisplay);
+    connect(&RosInterface_, &RosInterface::newVelDev, this, &ControlWindow::updateVelDevDisplay);
+    // connect(stop_button_,  SIGNAL(clicked()), this, SLOT(&RosInterface::notstop()));
+    connect(stop_button_, &QPushButton::clicked, this, &ControlWindow::notstop);
     //Init subscriber.
-    m_RosInterface.init();
+    RosInterface_.init();
 }
 
-void ControlWindow::updatePoseDisplay(double x, double y, double z){
-    QString xPose, yPose, zPose;
-    xPose.setNum(x);
-    yPose.setNum(y);
-    zPose.setNum(z);
-    p_xDisplay->setText(xPose);
-    p_yDisplay->setText(yPose);
-    p_zDisplay->setText(zPose);
+void ControlWindow::notstop(){
+    RosInterface_.notstop();
+}
+
+void ControlWindow::updateVelDisplay(double x, double y, double z){
+    QString xVel, yVel, zVel;
+    xVel.setNum(x);
+    yVel.setNum(y);
+    zVel.setNum(z);
+    x_vel_display_->setText(xVel);
+    y_vel_display_->setText(yVel);
+    z_vel_display_->setText(zVel);
+}
+
+void ControlWindow::updateDevDisplay(double deviation, double relative){
+    QString dev, rel;
+    dev.setNum(deviation);
+    rel.setNum(relative);
+    dev_display_->setText(dev);
+    rel_dev_display_->setText(rel);
+}
+
+void ControlWindow::updateVelDevDisplay(double deviation){
+    QString vel_dev;
+    vel_dev.setNum(deviation);
+    vel_dev_display_->setText(vel_dev);
+}
+
+void ControlWindow::setVelocityDisplay(){
+    //Set up the Velocity Display - X.
+    QHBoxLayout *x_layout = new QHBoxLayout();
+    QLabel *x_label = new QLabel();
+    x_label->setText(tr("V_x:"));
+    x_vel_display_ = new QLineEdit();
+    x_vel_display_->setText(tr("0.0"));
+    x_layout->addWidget(x_label);
+    x_layout->addWidget(x_vel_display_);
+    //Set up the Velocity Display - Y.
+    QHBoxLayout *y_layout = new QHBoxLayout();
+    QLabel *y_label = new QLabel();
+    y_label->setText(tr("V_y:"));
+    y_vel_display_ = new QLineEdit();
+    y_vel_display_->setText(tr("0.0"));
+    y_layout->addWidget(y_label);
+    y_layout->addWidget(y_vel_display_);
+    //Set up the Velocity Display - Z.
+    QHBoxLayout *z_layout = new QHBoxLayout();
+    QLabel *z_label = new QLabel();
+    z_label->setText(tr("V_z:"));
+    z_vel_display_ = new QLineEdit();
+    z_vel_display_->setText(tr("0.0"));
+    z_layout->addWidget(z_label);
+    z_layout->addWidget(z_vel_display_);
+    //Adding to layout.
+    leftLayout->addLayout(x_layout);
+    leftLayout->addLayout(y_layout);
+    leftLayout->addLayout(z_layout);
+}
+
+void ControlWindow::setDeviationDisplay(){
+    //Set up deviation from path display.
+    QHBoxLayout *dev_layout = new QHBoxLayout();
+    QLabel *dev_label = new QLabel();
+    dev_label->setText(tr("Deviation:"));
+    dev_display_ = new QLineEdit();
+    dev_display_->setText(tr("0.0"));
+    dev_layout->addWidget(dev_label);
+    dev_layout->addWidget(dev_display_);
+    //Set up relative deviation display.
+    QHBoxLayout *rel_layout = new QHBoxLayout();
+    QLabel *rel_label = new QLabel();
+    rel_label->setText(tr("Relative Deviation:"));
+    rel_dev_display_ = new QLineEdit();
+    rel_dev_display_->setText(tr("0.0"));
+    rel_layout->addWidget(rel_label);
+    rel_layout->addWidget(rel_dev_display_);
+    //Set up velocity deviation.
+    QHBoxLayout *vel_dev_layout = new QHBoxLayout();
+    QLabel *vel_dev_label = new QLabel();
+    vel_dev_label->setText(tr("Relative Deviation:"));
+    vel_dev_display_ = new QLineEdit();
+    vel_dev_display_->setText(tr("0.0"));
+    vel_dev_layout->addWidget(vel_dev_label);
+    vel_dev_layout->addWidget(vel_dev_display_);
+    //Adding to layout.
+    leftLayout->addLayout(dev_layout);
+    leftLayout->addLayout(rel_layout);
+    leftLayout->addLayout(vel_dev_layout);
+}
+
+void ControlWindow::setStopButton(){
+    stop_button_ = new QPushButton();
+    stop_button_->setIcon(QIcon(":/images/stop.png"));
+    stop_button_->setIconSize(QSize(50, 50));
+    QHBoxLayout *stop_layout = new QHBoxLayout();
+    stop_layout->addWidget(stop_button_);
+    rightLayout->addLayout(stop_layout);
 }

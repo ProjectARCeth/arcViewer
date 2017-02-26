@@ -1,41 +1,52 @@
 #ifndef ___ROSINTERFACE_HPP___
 #define ___ROSINTERFACE_HPP___
 
+#include "arc_msgs/State.h"
+#include "arc_tools/coordinate_transform.hpp"
+
+#include "Eigen/Dense"
+
+#include <iostream>
+#include <geometry_msgs/Vector3.h>
+#include <ros/ros.h>
+#include <stdlib.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Float64.h>
+
 #include <QMutex>
 #include <QStringList>
 #include <QtCore>
 #include <QThread>
-#include <stdlib.h>
-#include <iostream>
-#include "assert.h"
-#include <ros/ros.h>
-#include <ros/network.h>
-#include <geometry_msgs/Twist.h>
-#include <nav_msgs/Odometry.h>
-#include <sensor_msgs/Image.h>
 
 class RosInterface : public QObject {
 	Q_OBJECT
 public:
-    RosInterface(int argc, char **pArgv, const char *topic_pose);
+    RosInterface(int argc, char **pArgv);
     virtual ~RosInterface();
     bool init();
-    void poseCallback(const nav_msgs::Odometry & msg);
-    void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+    void notstop();
+    void devCallback(const std_msgs::Float64::ConstPtr& msg);
+    void devVelCallback(const std_msgs::Float64::ConstPtr& msg);
+    void velCallback(const arc_msgs::State::ConstPtr& msg);
     Q_SLOT void run();
-    Q_SIGNAL void newPose(double x,double y,double z);
+    Q_SIGNAL void newVel(double x,double y,double z);
+    Q_SIGNAL void newDev(double deviation, double relative);
+    Q_SIGNAL void newVelDev(double vel_deviation);
+
 private:
-    int m_Init_argc;
-    char** m_pInit_argv;
-    const char * m_topic_pose;
-
-    double m_xPos;
-    double m_yPos;
-    double m_zPos;
-
-    QThread * m_pThread;
-
-    ros::Subscriber pose_listener;
+    int init_argc_;
+    char** init_argv_;
+    ros::Publisher notstop_pub;
+    ros::Subscriber deviation_sub_;
+    ros::Subscriber deviation_vel_sub_;
+    ros::Subscriber velocity_sub_;
+    float MAX_DEVIATION_FROM_TEACH_PATH;
+    std::string NOTSTOP_TOPIC;
+    std::string STATE_TOPIC;
+    std::string DEVIATION_TOPIC;
+    std::string DEVIATION_VELOCITY_TOPIC;
+    int QUEUE_LENGTH;
+    QThread * thread_;
 };
 #endif
 
