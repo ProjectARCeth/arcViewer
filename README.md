@@ -1,6 +1,6 @@
 # arcViewer
 
-# Controller - Dictonary
+## Controller - Dictonary
 X - Change mode (progressiv, exact velocity)
 
 B - Emergency button (notstop)
