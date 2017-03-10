@@ -27,15 +27,16 @@ bool RosInterface::init(){
     ros::Time::init();
     ros::NodeHandle node;
     //Get parameters.
-    node.getParam("/safety/MAX_DEVIATION_FROM_TEACH_PATH", MAX_DEVIATION_FROM_TEACH_PATH);
     node.getParam("/safety/MIN_PUBLISH_NOTSTOP_COUNT", MIN_PUBLISH_NOTSTOP_COUNT);
     node.getParam("/generel/MODE_INIT", MODE_INIT);
     node.getParam("/general/QUEUE_LENGTH", QUEUE_LENGTH);
     node.getParam("/topic/OBSTACLE_DISTANCE", OBSTACLE_DISTANCE_TOPIC);
     node.getParam("/topic/MODE", MODE_TOPIC);
     node.getParam("/topic/NOTSTOP", NOTSTOP_TOPIC);
+    node.getParam("/topic/PURE_PURSUIT_INFO", PURE_PURSUIT_INFO_TOPIC);
     node.getParam("/topic/SHUTDOWN", SHUTDOWN_TOPIC);
     node.getParam("/topic/STATE", STATE_TOPIC);
+    node.getParam("/topic/STATE_STEERING_ANGLE", STEERING_TOPIC);
     node.getParam("/topic/TRACKING_ERROR", DEVIATION_TOPIC);
     node.getParam("/topic/TRACKING_ERROR_VELOCITY", DEVIATION_VELOCITY_TOPIC);
     //Init publisher and subscriber.
@@ -46,6 +47,8 @@ bool RosInterface::init(){
     obstacle_distance_sub = node.subscribe(OBSTACLE_DISTANCE_TOPIC, QUEUE_LENGTH, &RosInterface::obstacleDistanceCallback, this);
     mode_sub_ = node.subscribe(MODE_TOPIC, QUEUE_LENGTH, &RosInterface::modeCallback, this);
     notstop_sub_ = node.subscribe(NOTSTOP_TOPIC, QUEUE_LENGTH, &RosInterface::notstopCallback, this);
+    pure_pursuit_info_sub_ = node.subscribe(PURE_PURSUIT_INFO_TOPIC, QUEUE_LENGTH, &RosInterface::purePursuitCallback, this);
+    steering_sub_ = node.subscribe(STEERING_TOPIC, QUEUE_LENGTH, &RosInterface::steeringCallback, this);
     velocity_sub_ = node.subscribe(STATE_TOPIC, QUEUE_LENGTH, &RosInterface::velCallback, this);
     //Start thread.
     thread_->start();
@@ -78,10 +81,9 @@ void RosInterface::devCallback(const std_msgs::Float64::ConstPtr& msg){
     QMutex * pMutex = new QMutex();
     pMutex->lock();
     double deviation = msg->data;
-    double relative = deviation/MAX_DEVIATION_FROM_TEACH_PATH;
     pMutex->unlock();
     delete pMutex;
-    Q_EMIT newDev(deviation, relative);
+    Q_EMIT newDev(deviation);
 }
 
 void RosInterface::devVelCallback(const std_msgs::Float64::ConstPtr& msg){
@@ -113,6 +115,27 @@ void RosInterface::modeCallback(const std_msgs::Bool::ConstPtr& msg){
 
 void RosInterface::notstopCallback(const std_msgs::Bool::ConstPtr& msg){
     if(msg->data == true) Q_EMIT newNotstop();
+}
+
+void RosInterface::purePursuitCallback(const std_msgs::Float32MultiArray::ConstPtr& msg){
+    QMutex * pMutex = new QMutex();
+    pMutex->lock();
+    std::vector<double> info(10, 0);
+    for (int i = 0; i < 10; ++i){
+        info[i] = msg->data[i];
+    }
+    pMutex->unlock();
+    delete pMutex;
+    Q_EMIT newPurePursuitInfo(info);
+}
+
+void RosInterface::steeringCallback(const std_msgs::Float64::ConstPtr& msg){
+    QMutex * pMutex = new QMutex();
+    pMutex->lock();
+    double angle = msg->data;
+    pMutex->unlock();
+    delete pMutex;
+    Q_EMIT newSteering(angle);
 }
 
 void RosInterface::velCallback(const arc_msgs::State::ConstPtr& msg){

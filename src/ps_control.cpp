@@ -10,9 +10,11 @@ float MAX_STEERING_ANGLE;
 float MAX_VELOCITY;
 float MIN_SHUTDOWN_VELOCITY;
 float VELOCITY_STEP;
-float QUEUE_LENGTH;
-std::string STEERING_TOPIC;
+int QUEUE_LENGTH;
 float WHEEL_DIAMETER;
+std::string NOTSTOP_TOPIC;
+std::string STEERING_TOPIC;
+std::string STELLGROESSEN_TOPIC;
 std::string WHEEL_SENSOR_LEFT_TOPIC;
 std::string WHEEL_SENSOR_RIGHT_TOPIC;
 //Subcriber and publisher.
@@ -50,7 +52,9 @@ int main(int argc, char** argv){
 	 node.getParam("/erod/MAX_VELOCITY", MAX_VELOCITY);
 	 node.getParam("/safety/MIN_SHUTDOWN_VELOCITY", MIN_SHUTDOWN_VELOCITY);
 	 node.getParam("/general/QUEUE_LENGTH", QUEUE_LENGTH);
+	 node.getParam("/topic/NOTSTOP", NOTSTOP_TOPIC);
 	 node.getParam("/topic/STEERING_ANGLE", STEERING_TOPIC);
+	 node.getParam("/topic/STELLGROESSEN_SAFE", STELLGROESSEN_TOPIC);
 	 node.getParam("/topic/WHEEL_DIAMETER", WHEEL_DIAMETER);
 	 node.getParam("/topic/WHEEL_SENSORS_LEFT", WHEEL_SENSOR_LEFT_TOPIC);
 	 node.getParam("/topic/WHEEL_SENSORS_RIGHT", WHEEL_SENSOR_RIGHT_TOPIC);
@@ -65,8 +69,8 @@ int main(int argc, char** argv){
 
 void initPsControl(ros::NodeHandle* node){
 	//Publisher and subscriber
-	notstop_pub = node->advertise<std_msgs::Bool>("/notstop", QUEUE_LENGTH);
-	stellgroessen_pub = node->advertise<ackermann_msgs::AckermannDrive>("/stellgroessen_safe", QUEUE_LENGTH);
+	notstop_pub = node->advertise<std_msgs::Bool>(NOTSTOP_TOPIC, QUEUE_LENGTH);
+	stellgroessen_pub = node->advertise<ackermann_msgs::AckermannDrive>(STELLGROESSEN_TOPIC, QUEUE_LENGTH);
 	velocity_pub = node->advertise<std_msgs::Float64>("/current_velocity", QUEUE_LENGTH);
 	ps_controller_sub = node->subscribe("/joy", QUEUE_LENGTH, controllerCallback);
 	steering_angle_sub = node->subscribe(STEERING_TOPIC, QUEUE_LENGTH, steeringAngleCallback);
@@ -81,9 +85,9 @@ void update(){
 	drive_msg.speed = should_velocity;
 	drive_msg.steering_angle = should_angle;
 	stellgroessen_pub.publish(drive_msg);
-	std::cout << "v_should: " << should_velocity << ", v_current: " << current_velocity
-			  << " theta_should: " << should_angle << ", theta_current: " << current_angle
-			  << std::endl;
+	// std::cout << "v_should: " << should_velocity << ", v_current: " << current_velocity
+	// 		  << " theta_should: " << should_angle << ", theta_current: " << current_angle
+	// 		  << std::endl;
 }
 
 void closePsControl(){
@@ -134,7 +138,7 @@ void controllerCallback(const sensor_msgs::Joy::ConstPtr& msg){
 	} 
 	//Updating steering angle 
 	double key_position_angle = msg->axes[0];
-	should_angle = MAX_STEERING_ANGLE*key_position_angle;
+	if(key_position_angle != 0) should_angle = MAX_STEERING_ANGLE*key_position_angle;
 	//Update and publish.
 	if(should_velocity < 0) should_velocity = 0;
 	if(should_velocity > MAX_VELOCITY) should_velocity = MAX_VELOCITY;

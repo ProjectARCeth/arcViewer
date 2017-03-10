@@ -27,6 +27,8 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
     connect(&RosInterface_, &RosInterface::newObstacleDis, this, &ControlWindow::updateObstacleDisDisplay);
     connect(&RosInterface_, &RosInterface::newMode, this, &ControlWindow::buildInterface);
     connect(&RosInterface_, &RosInterface::newNotstop, this, &ControlWindow::popUpNotstop);
+    connect(&RosInterface_, &RosInterface::newPurePursuitInfo, this, &ControlWindow::updatePurePursuitDisplay);
+    connect(&RosInterface_, &RosInterface::newSteering, this, &ControlWindow::updateSteeringDisplay);
     connect(stop_button_, &QPushButton::clicked, this, &ControlWindow::notstop);
     connect(shutdown_button_, &QPushButton::clicked, this, &ControlWindow::shutdown);
 }
@@ -34,18 +36,34 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
 void ControlWindow::buildInterface(bool mode){
     //Delete current interface.
     deleteWidgets();
-    //Adding velocity labels.
-    setVelocityDisplay();
-    //Adding distance to obstacle.
-    if(mode) setObstacleDistanceDisplay();
-    //Adding mode label.
+    //Adding modem shutdown and notstop.
     setModeDisplay(mode);
-    //Shutdown Button.
     setShutdownButton();
-    //Stop Button.
     setStopButton();
-    //Deviation only in repeat mode.
-    if(mode) setDeviationDisplay();
+    //Adding labels.
+    setVelocityDisplay();
+    if(mode) setUpDisplay(velocity_should_display_, "Vel should", leftLayout);
+    setUpDisplay(steering_ist_display_, "Steering ist", leftLayout);
+    if(mode){
+        setUpDisplay(steering_should_display_, "Steering should", leftLayout);
+        setUpDisplay(steering_reference_index_display_, "Steering ref", leftLayout);
+    }    
+    if(mode){
+        setUpDisplay(radius_reference_index_display_, "Radius ref", leftLayout);
+        setUpDisplay(radius_path_display_, "Radius path", leftLayout);
+        setUpDisplay(velocity_bound_physical_display_, "Vel bound phys", leftLayout);
+        setUpDisplay(velocity_bound_teach_display_, "Vel bound teach", leftLayout);
+    }           
+    if(mode){
+        setUpDisplay(distance_start_display_, "Distance start", leftLayout);
+        setUpDisplay(distance_end_display_, "Distance end", leftLayout);
+    }
+    if(mode){
+        setUpDisplay(braking_distance_display_, "Braking distance", rightLayout);
+        setUpDisplay(obstacle_dis_display_, "Obstacle distance", rightLayout);
+        setUpDisplay(dev_display_, "Path deviation", rightLayout);
+        setUpDisplay(vel_dev_display_, "Vel deviation", rightLayout);
+    }
 }
 
 void ControlWindow::deleteWidgets(){
@@ -69,23 +87,15 @@ void ControlWindow::shutdown(){
 }
 
 void ControlWindow::updateVelDisplay(double x, double y, double z){
-    QString absVel, xVel, yVel, zVel;
+    QString absVel;
     absVel.setNum(sqrt(x*x + y*y + z*z));
-    xVel.setNum(x);
-    yVel.setNum(y);
-    zVel.setNum(z);
     abs_vel_display_->setText(absVel);
-    x_vel_display_->setText(xVel);
-    y_vel_display_->setText(yVel);
-    z_vel_display_->setText(zVel);
 }
 
-void ControlWindow::updateDevDisplay(double deviation, double relative){
-    QString dev, rel;
+void ControlWindow::updateDevDisplay(double deviation){
+    QString dev;
     dev.setNum(deviation);
-    rel.setNum(relative);
     dev_display_->setText(dev);
-    rel_dev_display_->setText(rel);
 }
 
 void ControlWindow::updateVelDevDisplay(double deviation){
@@ -100,78 +110,35 @@ void ControlWindow::updateObstacleDisDisplay(double distance){
     obstacle_dis_display_->setText(obs_dis);
 }
 
-void ControlWindow::setVelocityDisplay(){
-    //Set up the Velocity Display - absolute Value.
-    QHBoxLayout *abs_layout = new QHBoxLayout();
-    abs_vel_display_ = new QLineEdit();
-    QPalette palette;
-    palette.setColor(QPalette::Base,Qt::black);
-    palette.setColor(QPalette::Text,Qt::green);
-    abs_vel_display_->setPalette(palette);
-    QFont sansFont("Helvetica [Cronyx]", 36);
-    abs_vel_display_->setFont(sansFont);
-    abs_vel_display_->setText(tr("0.0"));
-    abs_layout->addWidget(abs_vel_display_);
-    //Set up the Velocity Display - X.
-    QHBoxLayout *x_layout = new QHBoxLayout();
-    QLabel *x_label = new QLabel();
-    x_label->setText(tr("V_x:"));
-    x_vel_display_ = new QLineEdit();
-    x_vel_display_->setText(tr("0.0"));
-    x_layout->addWidget(x_label);
-    x_layout->addWidget(x_vel_display_);
-    //Set up the Velocity Display - Y.
-    QHBoxLayout *y_layout = new QHBoxLayout();
-    QLabel *y_label = new QLabel();
-    y_label->setText(tr("V_y:"));
-    y_vel_display_ = new QLineEdit();
-    y_vel_display_->setText(tr("0.0"));
-    y_layout->addWidget(y_label);
-    y_layout->addWidget(y_vel_display_);
-    //Set up the Velocity Display - Z.
-    QHBoxLayout *z_layout = new QHBoxLayout();
-    QLabel *z_label = new QLabel();
-    z_label->setText(tr("V_z:"));
-    z_vel_display_ = new QLineEdit();
-    z_vel_display_->setText(tr("0.0"));
-    z_layout->addWidget(z_label);
-    z_layout->addWidget(z_vel_display_);
-    //Adding to layout.
-    leftLayout->addLayout(abs_layout);
-    leftLayout->addLayout(x_layout);
-    leftLayout->addLayout(y_layout);
-    leftLayout->addLayout(z_layout);
+void ControlWindow::updatePurePursuitDisplay(std::vector <double> infos){
+    QString dis_start, dis_end, steering_ref, steering_should, radius_ref, radius_path,
+            braking_dis, bound_phys, bound_teach, vel_should;
+    dis_start.setNum(infos[0]);
+    dis_end.setNum(infos[1]);
+    steering_ref.setNum(infos[2]);
+    steering_should.setNum(infos[3]);
+    radius_ref.setNum(infos[4]);
+    radius_path.setNum(infos[5]);
+    bound_phys.setNum(infos[6]);
+    braking_dis.setNum(infos[7]);
+    bound_teach.setNum(infos[8]);
+    vel_should.setNum(infos[9]);    
+    distance_start_display_->setText(dis_start);
+    distance_end_display_->setText(dis_end);
+    steering_reference_index_display_->setText(steering_ref);
+    steering_should_display_->setText(steering_should);
+    radius_reference_index_display_->setText(radius_ref);
+    radius_path_display_->setText(radius_path);
+    velocity_bound_physical_display_->setText(bound_phys);
+    braking_distance_display_->setText(braking_dis);
+    velocity_bound_teach_display_->setText(bound_teach);
+    velocity_should_display_->setText(vel_should);
 }
 
-void ControlWindow::setDeviationDisplay(){
-    //Set up deviation from path display.
-    QHBoxLayout *dev_layout = new QHBoxLayout();
-    QLabel *dev_label = new QLabel();
-    dev_label->setText(tr("Deviation:"));
-    dev_display_ = new QLineEdit();
-    dev_display_->setText(tr("0.0"));
-    dev_layout->addWidget(dev_label);
-    dev_layout->addWidget(dev_display_);
-    //Set up relative deviation display.
-    QHBoxLayout *rel_layout = new QHBoxLayout();
-    QLabel *rel_label = new QLabel();
-    rel_label->setText(tr("Relative Deviation:"));
-    rel_dev_display_ = new QLineEdit();
-    rel_dev_display_->setText(tr("0.0"));
-    rel_layout->addWidget(rel_label);
-    rel_layout->addWidget(rel_dev_display_);
-    //Set up velocity deviation.
-    QHBoxLayout *vel_dev_layout = new QHBoxLayout();
-    QLabel *vel_dev_label = new QLabel();
-    vel_dev_label->setText(tr("Velocity Deviation:"));
-    vel_dev_display_ = new QLineEdit();
-    vel_dev_display_->setText(tr("0.0"));
-    vel_dev_layout->addWidget(vel_dev_label);
-    vel_dev_layout->addWidget(vel_dev_display_);
-    //Adding to layout.
-    leftLayout->addLayout(dev_layout);
-    leftLayout->addLayout(rel_layout);
-    leftLayout->addLayout(vel_dev_layout);
+void ControlWindow::updateSteeringDisplay(double angle){
+    QString steering_dis;
+    steering_dis.setNum(angle);
+    steering_ist_display_->setText(steering_dis);
 }
 
 void ControlWindow::setModeDisplay(bool mode){
@@ -186,18 +153,6 @@ void ControlWindow::setModeDisplay(bool mode){
     mode_layout->addWidget(mode_display_);
     //Adding to layout.
     rightLayout->addLayout(mode_layout);
-}
-
-void ControlWindow::setObstacleDistanceDisplay(){
-    QHBoxLayout *obs_dis_layout = new QHBoxLayout();
-    QLabel *obs_dis_label = new QLabel();
-    obs_dis_label->setText(tr("Distance to obstacle:"));
-    obstacle_dis_display_ = new QLineEdit();
-    obstacle_dis_display_->setText(tr("0.0"));
-    obs_dis_layout->addWidget(obs_dis_label);
-    obs_dis_layout->addWidget(obstacle_dis_display_);
-    //Adding to layout.
-    leftLayout->addLayout(obs_dis_layout);
 }
 
 void ControlWindow::setStopButton(){
@@ -215,4 +170,32 @@ void ControlWindow::setShutdownButton(){
     QHBoxLayout *shutdown_layout = new QHBoxLayout();
     shutdown_layout->addWidget(shutdown_button_);
     rightLayout->addLayout(shutdown_layout);
+}
+
+void ControlWindow::setUpDisplay(QLineEdit *display, std::string info, QVBoxLayout *bigLayout){
+    QHBoxLayout *layout = new QHBoxLayout();
+    QLabel *label = new QLabel();
+    QString label_string = QString::fromStdString(info + ":");
+    label->setText(label_string);
+    display = new QLineEdit();
+    display->setText(tr("0.0"));
+    layout->addWidget(label);
+    layout->addWidget(display);
+    bigLayout->addLayout(layout);
+}
+
+void ControlWindow::setVelocityDisplay(){
+    //Set up the Velocity Display - absolute Value.
+    QHBoxLayout *abs_layout = new QHBoxLayout();
+    abs_vel_display_ = new QLineEdit();
+    QPalette palette;
+    palette.setColor(QPalette::Base,Qt::black);
+    palette.setColor(QPalette::Text,Qt::green);
+    abs_vel_display_->setPalette(palette);
+    QFont sansFont("Helvetica [Cronyx]", 36);
+    abs_vel_display_->setFont(sansFont);
+    abs_vel_display_->setText(tr("0.0"));
+    abs_layout->addWidget(abs_vel_display_);
+    //Adding to layout.
+    leftLayout->addLayout(abs_layout);
 }
