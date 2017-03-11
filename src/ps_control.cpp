@@ -6,6 +6,8 @@
 #include <std_msgs/Float64.h>
 
 //Defintion of constants.
+float MAX_ACCELERATING_VOLTAGE;
+float MAX_BRAKING_VOLTAGE;
 float MAX_STEERING_ANGLE;
 float MAX_VELOCITY;
 float MIN_SHUTDOWN_VELOCITY;
@@ -18,6 +20,7 @@ std::string STELLGROESSEN_TOPIC;
 std::string WHEEL_SENSOR_LEFT_TOPIC;
 std::string WHEEL_SENSOR_RIGHT_TOPIC;
 //Subcriber and publisher.
+ros::Publisher analog_acc_pub;
 ros::Publisher notstop_pub;
 ros::Publisher stellgroessen_pub;
 ros::Publisher velocity_pub;
@@ -40,7 +43,6 @@ void closePsControl();
 void controllerCallback(const sensor_msgs::Joy::ConstPtr& msg);
 void initPsControl(ros::NodeHandle* node);
 void steeringAngleCallback(const std_msgs::Float64::ConstPtr& msg);
-void update();
 void wheelSensorCallback(const std_msgs::Float64::ConstPtr& msg);
 
 int main(int argc, char** argv){
@@ -48,27 +50,35 @@ int main(int argc, char** argv){
 	ros::init(argc, argv, "ps_control");
 	ros::NodeHandle node;
 	//Getting parameters.
-	 node.getParam("/erod/MAX_STEERING_ANGLE", MAX_STEERING_ANGLE);
-	 node.getParam("/erod/MAX_VELOCITY", MAX_VELOCITY);
-	 node.getParam("/safety/MIN_SHUTDOWN_VELOCITY", MIN_SHUTDOWN_VELOCITY);
-	 node.getParam("/general/QUEUE_LENGTH", QUEUE_LENGTH);
-	 node.getParam("/topic/NOTSTOP", NOTSTOP_TOPIC);
-	 node.getParam("/topic/STEERING_ANGLE", STEERING_TOPIC);
-	 node.getParam("/topic/STELLGROESSEN_SAFE", STELLGROESSEN_TOPIC);
-	 node.getParam("/topic/WHEEL_DIAMETER", WHEEL_DIAMETER);
-	 node.getParam("/topic/WHEEL_SENSORS_LEFT", WHEEL_SENSOR_LEFT_TOPIC);
-	 node.getParam("/topic/WHEEL_SENSORS_RIGHT", WHEEL_SENSOR_RIGHT_TOPIC);
-	 VELOCITY_STEP = MAX_VELOCITY/40;
-	 //Initialisation.
-	 initPsControl(&node);
-	 //Spinning.
-	 ros::spin();
-	 closePsControl();
-	 return 0;
+	node.getParam("/erod/MAX_ACCELERATING_VOLTAGE", MAX_ACCELERATING_VOLTAGE);
+	node.getParam("/erod/MAX_BRAKING_VOLTAGE", MAX_BRAKING_VOLTAGE);
+	node.getParam("/erod/MAX_STEERING_ANGLE", MAX_STEERING_ANGLE);
+	node.getParam("/erod/MAX_VELOCITY", MAX_VELOCITY);
+	node.getParam("/erod/WHEEL_DIAMETER", WHEEL_DIAMETER);
+	node.getParam("/safety/MIN_SHUTDOWN_VELOCITY", MIN_SHUTDOWN_VELOCITY);
+	node.getParam("/general/QUEUE_LENGTH", QUEUE_LENGTH);
+	node.getParam("/topic/NOTSTOP", NOTSTOP_TOPIC);
+ 	node.getParam("/topic/STATE_STEERING_ANGLE", STEERING_TOPIC);
+	node.getParam("/topic/STELLGROESSEN_SAFE", STELLGROESSEN_TOPIC);
+	node.getParam("/topic/WHEEL_REAR_LEFT", WHEEL_SENSOR_LEFT_TOPIC);
+	node.getParam("/topic/WHEEL_REAR_RIGHT", WHEEL_SENSOR_RIGHT_TOPIC);
+	VELOCITY_STEP = MAX_VELOCITY/40;
+	//Initialisation.
+	initPsControl(&node);
+	//Spinning.
+	ros::spin();
+	closePsControl();
+	return 0;
+}
+
+double absVal(double value){
+	if(value >= 0.0) return value;
+	if (value < 0.0) return -value;
 }
 
 void initPsControl(ros::NodeHandle* node){
 	//Publisher and subscriber
+	analog_acc_pub = node->advertise<std_msgs::Float64>("/analog_acc", QUEUE_LENGTH);
 	notstop_pub = node->advertise<std_msgs::Bool>(NOTSTOP_TOPIC, QUEUE_LENGTH);
 	stellgroessen_pub = node->advertise<ackermann_msgs::AckermannDrive>(STELLGROESSEN_TOPIC, QUEUE_LENGTH);
 	velocity_pub = node->advertise<std_msgs::Float64>("/current_velocity", QUEUE_LENGTH);
@@ -78,16 +88,6 @@ void initPsControl(ros::NodeHandle* node){
 	wheel_sensor_right_sub = node->subscribe(WHEEL_SENSOR_RIGHT_TOPIC, QUEUE_LENGTH, wheelSensorCallback);
 	//Sending initialised comment.
 	std::cout << std::endl << "ARC VIEWER: Ps controller initialised "<< std::endl;
-}
-
-void update(){
-	ackermann_msgs::AckermannDrive drive_msg; 
-	drive_msg.speed = should_velocity;
-	drive_msg.steering_angle = should_angle;
-	stellgroessen_pub.publish(drive_msg);
-	// std::cout << "v_should: " << should_velocity << ", v_current: " << current_velocity
-	// 		  << " theta_should: " << should_angle << ", theta_current: " << current_angle
-	// 		  << std::endl;
 }
 
 void closePsControl(){
@@ -113,16 +113,14 @@ void controllerCallback(const sensor_msgs::Joy::ConstPtr& msg){
 		std::cout << std::endl << "ARC VIEWER: NOTSTOP !!!!!" << std::endl;
 		while(current_velocity > 0.0){
 			should_velocity = 0.0;
-			update();
 		}
 		closePsControl();
 	}
 	//Shutdown -> Y Taste [button 3].
-	if(msg->buttons[3] == 3){
+	if(msg->buttons[3] == 1){
 		std::cout << std::endl << "ARC VIEWER: Shutdown initialised" << std::endl;
 		while(current_velocity >= MIN_SHUTDOWN_VELOCITY){
 			should_velocity = 0.0; //TODO: import shutdown function from CAS.
-			update();
 		}
 		closePsControl();
 	}
@@ -136,13 +134,34 @@ void controllerCallback(const sensor_msgs::Joy::ConstPtr& msg){
 	if(mode){
 		should_velocity = MAX_VELOCITY*absVal(key_position_acc-1)/2;
 	} 
-	//Updating steering angle 
+	// Updating analog input.
+	float key_analog = msg->axes[4];
+	if(key_analog == 0){
+		std_msgs::Float64 analog_msg;
+		analog_msg.data = 0;
+		analog_acc_pub.publish(analog_msg);
+	}
+	if(key_analog > 0){
+		std_msgs::Float64 analog_msg;
+		analog_msg.data = key_analog * MAX_ACCELERATING_VOLTAGE;
+		analog_acc_pub.publish(analog_msg);
+	}
+	if(key_analog < 0){
+		std_msgs::Float64 analog_msg;
+		analog_msg.data = key_analog * MAX_BRAKING_VOLTAGE;
+		analog_acc_pub.publish(analog_msg);
+	}
+	//Updating steering angle.
 	double key_position_angle = msg->axes[0];
-	if(key_position_angle != 0) should_angle = MAX_STEERING_ANGLE*key_position_angle;
+	should_angle = MAX_STEERING_ANGLE*key_position_angle;
 	//Update and publish.
 	if(should_velocity < 0) should_velocity = 0;
 	if(should_velocity > MAX_VELOCITY) should_velocity = MAX_VELOCITY;
-	update();
+	//Publish.
+	ackermann_msgs::AckermannDrive drive_msg; 
+	drive_msg.speed = should_velocity;
+	drive_msg.steering_angle = should_angle;
+	stellgroessen_pub.publish(drive_msg);
 }
 
 void steeringAngleCallback(const std_msgs::Float64::ConstPtr& msg){
@@ -154,9 +173,4 @@ void wheelSensorCallback(const std_msgs::Float64::ConstPtr& msg){
 	std_msgs::Float64 velocity_msg;
 	velocity_msg.data = current_velocity;
 	velocity_pub.publish(velocity_msg);
-}
-
-double absVal(double value){
-	if(value >= 0.0) return value;
-	if (value < 0.0) return -value;
 }
