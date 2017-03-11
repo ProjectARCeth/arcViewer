@@ -86,9 +86,9 @@ void ControlWindow::shutdown(){
     RosInterface_.shutdown();
 }
 
-void ControlWindow::updateVelDisplay(double x, double y, double z){
+void ControlWindow::updateVelDisplay(double velocity){
     QString absVel;
-    absVel.setNum(sqrt(x*x + y*y + z*z));
+    absVel.setNum(velocity);
     abs_vel_display_->setText(absVel);
 }
 

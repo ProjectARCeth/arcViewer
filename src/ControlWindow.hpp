@@ -30,7 +30,7 @@ public:
     Q_SLOT void updateObstacleDisDisplay(double distance);
     Q_SLOT void updatePurePursuitDisplay(std::vector <double> infos);
     Q_SLOT void updateSteeringDisplay(double angle);
-    Q_SLOT void updateVelDisplay(double x, double y, double z);
+    Q_SLOT void updateVelDisplay(double velocity);
     Q_SLOT void updateVelDevDisplay(double deviation);
 
 private:

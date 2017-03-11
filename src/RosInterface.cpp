@@ -141,8 +141,8 @@ void RosInterface::steeringCallback(const std_msgs::Float64::ConstPtr& msg){
 void RosInterface::velCallback(const arc_msgs::State::ConstPtr& msg){
     QMutex * pMutex = new QMutex();
     pMutex->lock();
-    Eigen::Vector3d velocity = arc_tools::transformVectorMessageToEigen(msg->pose_diff.twist.linear);
+    double velocity = msg->pose_diff;
     pMutex->unlock();
     delete pMutex;
-    Q_EMIT newVel(velocity(0), velocity(1), velocity(2));
+    Q_EMIT newVel(velocity);
 }

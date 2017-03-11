@@ -44,7 +44,7 @@ public:
     Q_SIGNAL void newNotstop();
     Q_SIGNAL void newPurePursuitInfo(std::vector<double> info);
     Q_SIGNAL void newSteering(double angle);
-    Q_SIGNAL void newVel(double x,double y,double z);
+    Q_SIGNAL void newVel(double velocity);
     Q_SIGNAL void newVelDev(double vel_deviation);
 
 private:
