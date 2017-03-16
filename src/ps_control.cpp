@@ -20,7 +20,6 @@ std::string STELLGROESSEN_TOPIC;
 std::string WHEEL_SENSOR_LEFT_TOPIC;
 std::string WHEEL_SENSOR_RIGHT_TOPIC;
 //Subcriber and publisher.
-ros::Publisher analog_acc_pub;
 ros::Publisher notstop_pub;
 ros::Publisher stellgroessen_pub;
 ros::Publisher velocity_pub;
@@ -31,8 +30,6 @@ ros::Subscriber wheel_sensor_right_sub;
 //Controller and car state.
 double current_angle = 0.0;
 double should_angle = 0.0;
-bool mode = true;
-bool mode_changable = true;
 bool notstop = false;
 bool shutdown = false;
 double current_velocity = 0.0;
@@ -50,8 +47,6 @@ int main(int argc, char** argv){
 	ros::init(argc, argv, "ps_control");
 	ros::NodeHandle node;
 	//Getting parameters.
-	node.getParam("/erod/MAX_ACCELERATING_VOLTAGE", MAX_ACCELERATING_VOLTAGE);
-	node.getParam("/erod/MAX_BRAKING_VOLTAGE", MAX_BRAKING_VOLTAGE);
 	node.getParam("/erod/MAX_STEERING_ANGLE", MAX_STEERING_ANGLE);
 	node.getParam("/erod/MAX_VELOCITY", MAX_VELOCITY);
 	node.getParam("/erod/WHEEL_DIAMETER", WHEEL_DIAMETER);
@@ -78,7 +73,6 @@ double absVal(double value){
 
 void initPsControl(ros::NodeHandle* node){
 	//Publisher and subscriber
-	analog_acc_pub = node->advertise<std_msgs::Float64>("/analog_acc", QUEUE_LENGTH);
 	notstop_pub = node->advertise<std_msgs::Bool>(NOTSTOP_TOPIC, QUEUE_LENGTH);
 	stellgroessen_pub = node->advertise<ackermann_msgs::AckermannDrive>(STELLGROESSEN_TOPIC, QUEUE_LENGTH);
 	velocity_pub = node->advertise<std_msgs::Float64>("/current_velocity", QUEUE_LENGTH);
@@ -98,58 +92,23 @@ void closePsControl(){
 
 void controllerCallback(const sensor_msgs::Joy::ConstPtr& msg){
 	//Change mode -> X Taste [buttons 2].
-	//0 --> progressiv and 1 --> exact.
-	if(msg->buttons[2] == 1 && mode_changable){
-		mode = !mode;
-		mode_changable = false;
-		std::cout << std::endl << "ARC VIEWER: Mode changed" << std::endl;
-	}
-	if(msg->buttons[2] == 0 && !mode_changable) mode_changable = true;
 	//Emergency stop -> B Taste [buttons 1].
 	if(msg->buttons[1] == 1){
 		std_msgs::Bool notstop_msg;
 		notstop_msg.data = true;
 		notstop_pub.publish(notstop_msg);
 		std::cout << std::endl << "ARC VIEWER: NOTSTOP !!!!!" << std::endl;
-		while(current_velocity > 0.0){
-			should_velocity = 0.0;
-		}
-		closePsControl();
+		should_velocity = 0.0;
 	}
 	//Shutdown -> Y Taste [button 3].
 	if(msg->buttons[3] == 1){
 		std::cout << std::endl << "ARC VIEWER: Shutdown initialised" << std::endl;
-		while(current_velocity >= MIN_SHUTDOWN_VELOCITY){
-			should_velocity = 0.0; //TODO: import shutdown function from CAS.
-		}
-		closePsControl();
+		should_velocity = 0.0; //TODO: import shutdown function from CAS.
 	}
 	//Updating velocity (Accelerating -> RT, Breaking -> LT).
-	double key_position_acc = msg->axes[5];
-	double key_position_break = msg->axes[2];
-	if(!mode && should_velocity <= MAX_VELOCITY && should_velocity >= 0){
-		should_velocity += VELOCITY_STEP*absVal(key_position_acc-1)/2;
-		should_velocity -= VELOCITY_STEP*absVal(key_position_break-1)/2;
-	} 
-	if(mode){
-		should_velocity = MAX_VELOCITY*absVal(key_position_acc-1)/2;
-	} 
-	// Updating analog input.
-	float key_analog = msg->axes[4];
-	if(key_analog == 0){
-		std_msgs::Float64 analog_msg;
-		analog_msg.data = 0;
-		analog_acc_pub.publish(analog_msg);
-	}
-	if(key_analog > 0){
-		std_msgs::Float64 analog_msg;
-		analog_msg.data = key_analog * MAX_ACCELERATING_VOLTAGE;
-		analog_acc_pub.publish(analog_msg);
-	}
-	if(key_analog < 0){
-		std_msgs::Float64 analog_msg;
-		analog_msg.data = key_analog * MAX_BRAKING_VOLTAGE;
-		analog_acc_pub.publish(analog_msg);
+	double key_position_acc = msg->axes[4];
+	if(should_velocity >= 0.0 && should_velocity <= MAX_VELOCITY){
+		should_velocity += key_position_acc*VELOCITY_STEP;
 	}
 	//Updating steering angle.
 	double key_position_angle = msg->axes[0];

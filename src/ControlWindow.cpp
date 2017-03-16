@@ -23,14 +23,15 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
     //Connecting actions.
     connect(&RosInterface_, &RosInterface::newVel, this, &ControlWindow::updateVelDisplay);
     connect(&RosInterface_, &RosInterface::newDev, this, &ControlWindow::updateDevDisplay);
-    connect(&RosInterface_, &RosInterface::newVelDev, this, &ControlWindow::updateVelDevDisplay);
+    connect(&RosInterface_, &RosInterface::newLaunchCommand, this, &ControlWindow::setLaunchable);
     connect(&RosInterface_, &RosInterface::newObstacleDis, this, &ControlWindow::updateObstacleDisDisplay);
-    connect(&RosInterface_, &RosInterface::newMode, this, &ControlWindow::buildInterface);
     connect(&RosInterface_, &RosInterface::newNotstop, this, &ControlWindow::popUpNotstop);
     connect(&RosInterface_, &RosInterface::newPurePursuitInfo, this, &ControlWindow::updatePurePursuitDisplay);
     connect(&RosInterface_, &RosInterface::newSteering, this, &ControlWindow::updateSteeringDisplay);
+    connect(&RosInterface_, &RosInterface::newVelDev, this, &ControlWindow::updateVelDevDisplay);
     connect(stop_button_, &QPushButton::clicked, this, &ControlWindow::notstop);
     connect(shutdown_button_, &QPushButton::clicked, this, &ControlWindow::shutdown);
+    connect(launch_button_, &QPushButton::clicked, this, &ControlWindow::launching);
 }
 
 void ControlWindow::buildInterface(bool mode){
@@ -64,6 +65,7 @@ void ControlWindow::buildInterface(bool mode){
         setUpDisplay(dev_display_, "Path deviation", rightLayout);
         setUpDisplay(vel_dev_display_, "Vel deviation", rightLayout);
     }
+    setLaunchButton();
 }
 
 void ControlWindow::deleteWidgets(){
@@ -74,12 +76,31 @@ void ControlWindow::deleteWidgets(){
     }
 }
 
+void ControlWindow::launching(){
+    //Launch system only one time.
+    if(system_launched_){
+        RosInterface_.launching();
+        system_launched_ = false;
+    }
+}
+
 void ControlWindow::notstop(){
     RosInterface_.notstop();
 }
 
 void ControlWindow::popUpNotstop(){
     QMessageBox::warning(this, "ACHTUNG NOTSTOP", "NOTSTOP! Festhalten.");
+}
+
+void ControlWindow::setLaunchable(bool mode){
+    //Change launch button on green color and change text.
+    QPalette palette;
+    palette.setColor(QPalette::Button,Qt::green);
+    launch_button_->setPalette(palette);
+    launch_button_->setText(tr("&Ready !"));
+    launch_button_->update();
+    //Permit system launch.
+    system_launched_ = true;
 }
 
 void ControlWindow::shutdown(){
@@ -139,6 +160,19 @@ void ControlWindow::updateSteeringDisplay(double angle){
     QString steering_dis;
     steering_dis.setNum(angle);
     steering_ist_display_->setText(steering_dis);
+}
+
+void ControlWindow::setLaunchButton(){
+    launch_button_ = new QPushButton(tr("&System Booting"));
+    launch_button_->setIconSize(QSize(50, 50));
+    QPalette palette;
+    palette.setColor(QPalette::Button,Qt::red);
+    launch_button_->setPalette(palette);
+    QHBoxLayout *launching_layout = new QHBoxLayout();
+    launching_layout->addWidget(launch_button_);
+    rightLayout->addLayout(launching_layout);
+    //Reset launchable.
+    system_launched_ = false;
 }
 
 void ControlWindow::setModeDisplay(bool mode){

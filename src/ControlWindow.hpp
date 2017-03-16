@@ -23,8 +23,10 @@ class ControlWindow : public QWidget
 
 public:
     ControlWindow(int argc, char** argv, QWidget * parent = 0);
+    Q_SLOT void launching();
     Q_SLOT void notstop();
     Q_SLOT void popUpNotstop();
+    Q_SLOT void setLaunchable(bool mode);
     Q_SLOT void shutdown();
     Q_SLOT void updateDevDisplay(double deviation);
     Q_SLOT void updateObstacleDisDisplay(double distance);
@@ -62,13 +64,16 @@ private:
     //Shutdown button.
     QPushButton *shutdown_button_;
     //Mode button and display.
-    QPushButton *mode_button_;
     QLineEdit *mode_display_;
+    //Launch Button.
+    QPushButton *launch_button_;
+    bool system_launched_;
     //RosInterface.
     RosInterface RosInterface_;
     //Set layout functions.
     void buildInterface(bool mode);
     void deleteWidgets();
+    void setLaunchButton();
     void setModeDisplay(bool mode);
     void setShutdownButton();
     void setStopButton();
