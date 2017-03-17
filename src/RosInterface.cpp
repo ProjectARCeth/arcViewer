@@ -68,9 +68,11 @@ void RosInterface::run(){
 
 void RosInterface::launching(){
     std::cout << std::endl << "GUI: System launched " << std::endl;
-    std_msgs::Bool launching_msg;
-    launching_msg.data = true;
-    launch_command_pub_.publish(launching_msg);
+    if(MODE_INIT){
+        std_msgs::Bool launching_msg;
+        launching_msg.data = true;
+        launch_command_pub_.publish(launching_msg);
+    }
 }
 
 void RosInterface::notstop(){

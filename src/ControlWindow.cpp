@@ -7,10 +7,27 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
     //Init ROSInterface..
     RosInterface_.init();
     bool mode = RosInterface_.getInitMode(); //O: Teach, 1: Repeat.
-    //Init layouts.
+    //Init big layouts.
     leftLayout = new QVBoxLayout();
     rightLayout = new QVBoxLayout();
     mainLayout = new QHBoxLayout();
+    //Init small layouts.
+    abs_vel_display_ = new QLineEdit();
+    dev_display_ = new QLineEdit();
+    vel_dev_display_ = new QLineEdit();
+    obstacle_dis_display_ = new QLineEdit();
+    distance_start_display_ = new QLineEdit();
+    distance_end_display_ = new QLineEdit();
+    steering_reference_index_display_ = new QLineEdit();
+    steering_should_display_ = new QLineEdit();
+    radius_reference_index_display_ = new QLineEdit();
+    radius_path_display_ = new QLineEdit();
+    velocity_bound_physical_display_ = new QLineEdit();
+    velocity_bound_teach_display_ = new QLineEdit();
+    velocity_should_display_ = new QLineEdit();
+    braking_distance_display_ = new QLineEdit();
+    steering_ist_display_ = new QLineEdit();
+    mode_display_ = new QLineEdit();
     //Building up interface.
     buildInterface(mode);
     //Merging main layout.
@@ -107,12 +124,6 @@ void ControlWindow::shutdown(){
     RosInterface_.shutdown();
 }
 
-void ControlWindow::updateVelDisplay(double velocity){
-    QString absVel;
-    absVel.setNum(velocity);
-    abs_vel_display_->setText(absVel);
-}
-
 void ControlWindow::updateDevDisplay(double deviation){
     QString dev;
     dev.setNum(deviation);
@@ -160,6 +171,12 @@ void ControlWindow::updateSteeringDisplay(double angle){
     QString steering_dis;
     steering_dis.setNum(angle);
     steering_ist_display_->setText(steering_dis);
+}
+
+void ControlWindow::updateVelDisplay(double velocity){
+    QString absVel;
+    absVel.setNum(velocity);
+    abs_vel_display_->setText(absVel);
 }
 
 void ControlWindow::setLaunchButton(){
@@ -211,7 +228,6 @@ void ControlWindow::setUpDisplay(QLineEdit *display, std::string info, QVBoxLayo
     QLabel *label = new QLabel();
     QString label_string = QString::fromStdString(info + ":");
     label->setText(label_string);
-    display = new QLineEdit();
     display->setText(tr("0.0"));
     layout->addWidget(label);
     layout->addWidget(display);
@@ -221,7 +237,6 @@ void ControlWindow::setUpDisplay(QLineEdit *display, std::string info, QVBoxLayo
 void ControlWindow::setVelocityDisplay(){
     //Set up the Velocity Display - absolute Value.
     QHBoxLayout *abs_layout = new QHBoxLayout();
-    abs_vel_display_ = new QLineEdit();
     QPalette palette;
     palette.setColor(QPalette::Base,Qt::black);
     palette.setColor(QPalette::Text,Qt::green);
