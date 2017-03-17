@@ -27,6 +27,8 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
     velocity_should_display_ = new QLineEdit();
     braking_distance_display_ = new QLineEdit();
     steering_ist_display_ = new QLineEdit();
+    wheel_left_display_ = new QLineEdit();
+    wheel_right_display_ = new QLineEdit();
     mode_display_ = new QLineEdit();
     //Building up interface.
     buildInterface(mode);
@@ -46,6 +48,8 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
     connect(&RosInterface_, &RosInterface::newPurePursuitInfo, this, &ControlWindow::updatePurePursuitDisplay);
     connect(&RosInterface_, &RosInterface::newSteering, this, &ControlWindow::updateSteeringDisplay);
     connect(&RosInterface_, &RosInterface::newVelDev, this, &ControlWindow::updateVelDevDisplay);
+    connect(&RosInterface_, &RosInterface::newWheelLeft, this, &ControlWindow::updateWheelLeftDisplay);
+    connect(&RosInterface_, &RosInterface::newWheelRight, this, &ControlWindow::updateWheelRightDisplay);
     connect(stop_button_, &QPushButton::clicked, this, &ControlWindow::notstop);
     connect(shutdown_button_, &QPushButton::clicked, this, &ControlWindow::shutdown);
     connect(launch_button_, &QPushButton::clicked, this, &ControlWindow::launching);
@@ -62,6 +66,8 @@ void ControlWindow::buildInterface(bool mode){
     setVelocityDisplay();
     if(mode) setUpDisplay(velocity_should_display_, "Vel should", leftLayout);
     setUpDisplay(steering_ist_display_, "Steering ist", leftLayout);
+    setUpDisplay(wheel_left_display_, "Wheel left", leftLayout);
+    setUpDisplay(wheel_right_display_, "Wheel right", leftLayout);
     if(mode){
         setUpDisplay(steering_should_display_, "Steering should", leftLayout);
         setUpDisplay(steering_reference_index_display_, "Steering ref", leftLayout);
@@ -142,29 +148,30 @@ void ControlWindow::updateObstacleDisDisplay(double distance){
     obstacle_dis_display_->setText(obs_dis);
 }
 
-void ControlWindow::updatePurePursuitDisplay(std::vector <double> infos){
-    QString dis_start, dis_end, steering_ref, steering_should, radius_ref, radius_path,
-            braking_dis, bound_phys, bound_teach, vel_should;
-    dis_start.setNum(infos[0]);
-    dis_end.setNum(infos[1]);
-    steering_ref.setNum(infos[2]);
-    steering_should.setNum(infos[3]);
-    radius_ref.setNum(infos[4]);
-    radius_path.setNum(infos[5]);
-    bound_phys.setNum(infos[6]);
-    braking_dis.setNum(infos[7]);
-    bound_teach.setNum(infos[8]);
-    vel_should.setNum(infos[9]);    
-    distance_start_display_->setText(dis_start);
-    distance_end_display_->setText(dis_end);
-    steering_reference_index_display_->setText(steering_ref);
-    steering_should_display_->setText(steering_should);
-    radius_reference_index_display_->setText(radius_ref);
-    radius_path_display_->setText(radius_path);
-    velocity_bound_physical_display_->setText(bound_phys);
-    braking_distance_display_->setText(braking_dis);
-    velocity_bound_teach_display_->setText(bound_teach);
-    velocity_should_display_->setText(vel_should);
+void ControlWindow::updatePurePursuitDisplay(float* info){
+    QString dis_start_string, dis_end_string, steering_ref_string,
+            steering_should_string, radius_ref_string, radius_path_string,
+            braking_dis_string, bound_phys_string, bound_teach_string, vel_should_string;
+    dis_start_string.setNum(*info);
+    dis_end_string.setNum(*(info+1));
+    steering_ref_string.setNum(*(info+2));
+    steering_should_string.setNum(*(info+3));
+    radius_ref_string.setNum(*(info+4));
+    radius_path_string.setNum(*(info+5));
+    bound_phys_string.setNum(*(info+6));
+    braking_dis_string.setNum(*(info+7));
+    bound_teach_string.setNum(*(info+8));
+    vel_should_string.setNum(*(info+9));    
+    distance_start_display_->setText(dis_start_string);
+    distance_end_display_->setText(dis_end_string);
+    steering_reference_index_display_->setText(steering_ref_string);
+    steering_should_display_->setText(steering_should_string);
+    radius_reference_index_display_->setText(radius_ref_string);
+    radius_path_display_->setText(radius_path_string);
+    velocity_bound_physical_display_->setText(bound_phys_string);
+    braking_distance_display_->setText(braking_dis_string);
+    velocity_bound_teach_display_->setText(bound_teach_string);
+    velocity_should_display_->setText(vel_should_string);
 }
 
 void ControlWindow::updateSteeringDisplay(double angle){
@@ -177,6 +184,18 @@ void ControlWindow::updateVelDisplay(double velocity){
     QString absVel;
     absVel.setNum(velocity);
     abs_vel_display_->setText(absVel);
+}
+
+void ControlWindow::updateWheelLeftDisplay(double wheel_left){
+    QString leftVel;
+    leftVel.setNum(wheel_left);
+    wheel_left_display_->setText(leftVel);
+}
+
+void ControlWindow::updateWheelRightDisplay(double wheel_right){
+    QString rightVel;
+    rightVel.setNum(wheel_right);
+    wheel_right_display_->setText(rightVel);
 }
 
 void ControlWindow::setLaunchButton(){

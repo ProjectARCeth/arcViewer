@@ -39,15 +39,19 @@ public:
     void purePursuitCallback(const std_msgs::Float32MultiArray::ConstPtr& msg);
     void steeringCallback(const std_msgs::Float64::ConstPtr& msg);
     void velCallback(const arc_msgs::State::ConstPtr& msg);
+    void wheelLeftCallback(const std_msgs::Float64::ConstPtr& msg);
+    void wheelRightCallback(const std_msgs::Float64::ConstPtr& msg);
     Q_SLOT void run();
     Q_SIGNAL void newDev(double deviation);
     Q_SIGNAL void newObstacleDis(double distance);
     Q_SIGNAL void newLaunchCommand(bool mode);
     Q_SIGNAL void newNotstop();
-    Q_SIGNAL void newPurePursuitInfo(std::vector<double> info);
+    Q_SIGNAL void newPurePursuitInfo(float *info);
     Q_SIGNAL void newSteering(double angle);
     Q_SIGNAL void newVel(double velocity);
     Q_SIGNAL void newVelDev(double vel_deviation);
+    Q_SIGNAL void newWheelLeft(double wheel_left);
+    Q_SIGNAL void newWheelRight(double wheel_right);
 
 private:
     int init_argc_;
@@ -64,6 +68,8 @@ private:
     ros::Subscriber ready_for_launching_sub_;
     ros::Subscriber steering_sub_;
     ros::Subscriber velocity_sub_;
+    ros::Subscriber wheel_left_sub;
+    ros::Subscriber wheel_right_sub;
     //Yaml constants.
     bool MODE_INIT;
     int MIN_PUBLISH_NOTSTOP_COUNT;
@@ -77,6 +83,8 @@ private:
     std::string SHUTDOWN_TOPIC;
     std::string STATE_TOPIC;
     std::string STEERING_TOPIC;
+    std::string WHEEL_LEFT_TOPIC;
+    std::string WHEEL_RIGHT_TOPIC;
     int QUEUE_LENGTH;
     //Thread.
     QThread * thread_;

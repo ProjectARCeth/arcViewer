@@ -41,6 +41,8 @@ bool RosInterface::init(){
     node.getParam("/topic/TRACKING_ERROR", DEVIATION_TOPIC);
     node.getParam("/topic/TRACKING_ERROR_VELOCITY", DEVIATION_VELOCITY_TOPIC);
     node.getParam("/topic/VCU_LAUNCHING_COMMAND", LAUNCHING_COMMAND_TOPIC);
+    node.getParam("/topic/WHEEL_REAR_LEFT", WHEEL_LEFT_TOPIC);
+    node.getParam("/topic/WHEEL_REAR_RIGHT", WHEEL_RIGHT_TOPIC);
     //Init publisher and subscriber.
     launch_command_pub_ = node.advertise<std_msgs::Bool>(LAUNCHING_COMMAND_TOPIC, QUEUE_LENGTH);
     notstop_pub_ = node.advertise<std_msgs::Bool>(NOTSTOP_TOPIC, QUEUE_LENGTH);
@@ -53,6 +55,8 @@ bool RosInterface::init(){
     ready_for_launching_sub_ = node.subscribe(READY_FOR_LAUNCHING_TOPIC, QUEUE_LENGTH, &RosInterface::readyForLaunchingCallback, this);
     steering_sub_ = node.subscribe(STEERING_TOPIC, QUEUE_LENGTH, &RosInterface::steeringCallback, this);
     velocity_sub_ = node.subscribe(STATE_TOPIC, QUEUE_LENGTH, &RosInterface::velCallback, this);
+    wheel_left_sub = node.subscribe(WHEEL_LEFT_TOPIC, QUEUE_LENGTH, &RosInterface::wheelLeftCallback, this);
+    wheel_right_sub = node.subscribe(WHEEL_RIGHT_TOPIC, QUEUE_LENGTH, &RosInterface::wheelRightCallback, this);
     //Start thread.
     thread_->start();
     return true;
@@ -123,10 +127,8 @@ void RosInterface::notstopCallback(const std_msgs::Bool::ConstPtr& msg){
 void RosInterface::purePursuitCallback(const std_msgs::Float32MultiArray::ConstPtr& msg){
     QMutex * pMutex = new QMutex();
     pMutex->lock();
-    std::vector<double> info(10, 0);
-    for (int i = 0; i < 10; ++i){
-        info[i] = msg->data[i];
-    }
+    float info[10];
+    for (int i = 0; i <= 9; ++i) info[i] = msg->data[i];
     pMutex->unlock();
     delete pMutex;
     Q_EMIT newPurePursuitInfo(info);
@@ -152,4 +154,22 @@ void RosInterface::velCallback(const arc_msgs::State::ConstPtr& msg){
     pMutex->unlock();
     delete pMutex;
     Q_EMIT newVel(velocity);
+}
+
+void RosInterface::wheelLeftCallback(const std_msgs::Float64::ConstPtr& msg){
+    QMutex * pMutex = new QMutex();
+    pMutex->lock();
+    double wheel_left = msg->data;
+    pMutex->unlock();
+    delete pMutex;
+    Q_EMIT newWheelLeft(wheel_left);
+}
+
+void RosInterface::wheelRightCallback(const std_msgs::Float64::ConstPtr& msg){
+    QMutex * pMutex = new QMutex();
+    pMutex->lock();
+    double wheel_right = msg->data;
+    pMutex->unlock();
+    delete pMutex;
+    Q_EMIT newWheelRight(wheel_right);
 }

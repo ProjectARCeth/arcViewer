@@ -30,10 +30,12 @@ public:
     Q_SLOT void shutdown();
     Q_SLOT void updateDevDisplay(double deviation);
     Q_SLOT void updateObstacleDisDisplay(double distance);
-    Q_SLOT void updatePurePursuitDisplay(std::vector <double> infos);
+    Q_SLOT void updatePurePursuitDisplay(float *info);
     Q_SLOT void updateSteeringDisplay(double angle);
     Q_SLOT void updateVelDisplay(double velocity);
     Q_SLOT void updateVelDevDisplay(double deviation);
+    Q_SLOT void updateWheelLeftDisplay(double wheel_left);
+    Q_SLOT void updateWheelRightDisplay(double wheel_right);
 
 private:
     QHBoxLayout *mainLayout;
@@ -59,6 +61,9 @@ private:
     QLineEdit *braking_distance_display_;
     //Steering information.
     QLineEdit *steering_ist_display_;
+    //Wheel sensor information.
+    QLineEdit *wheel_left_display_;
+    QLineEdit *wheel_right_display_;
     //Stop button.
     QPushButton *stop_button_;
     //Shutdown button.
