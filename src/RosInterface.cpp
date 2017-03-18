@@ -15,6 +15,13 @@ RosInterface::~RosInterface(){
     thread_->wait();
 }
 
+void RosInterface::changeToManuell(){
+    std::cout << std::endl << "GUI: Manuell Mode " << std::endl;
+    std_msgs::Bool anti_launching_msg;
+    anti_launching_msg.data = false;
+    launch_command_pub_.publish(anti_launching_msg);
+}
+
 bool RosInterface::getInitMode(){return MODE_INIT;}
 
 bool RosInterface::init(){
@@ -31,13 +38,15 @@ bool RosInterface::init(){
     //Get parameters.
     node.getParam("/safety/MIN_PUBLISH_NOTSTOP_COUNT", MIN_PUBLISH_NOTSTOP_COUNT);
     node.getParam("/general/QUEUE_LENGTH", QUEUE_LENGTH);
-    node.getParam("/topic/OBSTACLE_DISTANCE", OBSTACLE_DISTANCE_TOPIC);
-    node.getParam("/topic/NOTSTOP", NOTSTOP_TOPIC);
     node.getParam("/topic/NAVIGATION_INFO", PURE_PURSUIT_INFO_TOPIC);
+    node.getParam("/topic/NOTSTOP", NOTSTOP_TOPIC);
+    node.getParam("/topic/OBSTACLE_DISTANCE", OBSTACLE_DISTANCE_TOPIC);
     node.getParam("/topic/READY_FOR_DRIVING", READY_FOR_LAUNCHING_TOPIC);
+    node.getParam("/topic/RUNNING_PROGRAMMES", LAUNCHING_INFO_TOPIC);
     node.getParam("/topic/SHUTDOWN", SHUTDOWN_TOPIC);
     node.getParam("/topic/STATE", STATE_TOPIC);
     node.getParam("/topic/STATE_STEERING_ANGLE", STEERING_TOPIC);
+    node.getParam("/topic/STELLGROESSEN_SAFE", STELLGROESSEN_TOPIC);
     node.getParam("/topic/TRACKING_ERROR", DEVIATION_TOPIC);
     node.getParam("/topic/TRACKING_ERROR_VELOCITY", DEVIATION_VELOCITY_TOPIC);
     node.getParam("/topic/VCU_LAUNCHING_COMMAND", LAUNCHING_COMMAND_TOPIC);
@@ -50,11 +59,13 @@ bool RosInterface::init(){
     deviation_sub_ = node.subscribe(DEVIATION_TOPIC, QUEUE_LENGTH, &RosInterface::devCallback, this);
     deviation_vel_sub_ = node.subscribe(DEVIATION_VELOCITY_TOPIC, QUEUE_LENGTH, &RosInterface::devVelCallback, this);
     obstacle_distance_sub_ = node.subscribe(OBSTACLE_DISTANCE_TOPIC, QUEUE_LENGTH, &RosInterface::obstacleDistanceCallback, this);
+    launching_info_sub_ = node.subscribe(LAUNCHING_INFO_TOPIC, QUEUE_LENGTH, &RosInterface::launchingInfoCallback, this);
     notstop_sub_ = node.subscribe(NOTSTOP_TOPIC, QUEUE_LENGTH, &RosInterface::notstopCallback, this);
     pure_pursuit_info_sub_ = node.subscribe(PURE_PURSUIT_INFO_TOPIC, QUEUE_LENGTH, &RosInterface::purePursuitCallback, this);
     ready_for_launching_sub_ = node.subscribe(READY_FOR_LAUNCHING_TOPIC, QUEUE_LENGTH, &RosInterface::readyForLaunchingCallback, this);
     steering_sub_ = node.subscribe(STEERING_TOPIC, QUEUE_LENGTH, &RosInterface::steeringCallback, this);
-    velocity_sub_ = node.subscribe(STATE_TOPIC, QUEUE_LENGTH, &RosInterface::velCallback, this);
+    stellgroessen_sub_ = node.subscribe(STELLGROESSEN_TOPIC, QUEUE_LENGTH, &RosInterface::stellgroessenCallback, this);
+    velocity_sub_ = node.subscribe(STATE_TOPIC, QUEUE_LENGTH, &RosInterface::stateCallback, this);
     wheel_left_sub = node.subscribe(WHEEL_LEFT_TOPIC, QUEUE_LENGTH, &RosInterface::wheelLeftCallback, this);
     wheel_right_sub = node.subscribe(WHEEL_RIGHT_TOPIC, QUEUE_LENGTH, &RosInterface::wheelRightCallback, this);
     //Start thread.
@@ -111,6 +122,25 @@ void RosInterface::devVelCallback(const std_msgs::Float64::ConstPtr& msg){
     Q_EMIT newVelDev(vel_deviation);
 }
 
+void RosInterface::launchingInfoCallback(const std_msgs::Int16MultiArray::ConstPtr& msg){
+    QMutex * pMutex = new QMutex();
+    pMutex->lock();
+    bool controlling = msg->data[0];
+    bool gps = msg->data[1];
+    bool ni_client = msg->data[2];
+    bool obstacle_detection = msg->data[3];
+    bool guard = msg->data[4];
+    bool rovio = msg->data[5];
+    bool state_estimation = msg->data[6];
+    bool orbslam = msg->data[7];
+    bool velodyne = msg->data[8];
+    bool vi = msg->data[9];
+    pMutex->unlock();
+    delete pMutex;
+    Q_EMIT newLaunching1(gps, vi, velodyne, rovio, state_estimation, orbslam);
+    Q_EMIT newLaunching2(controlling, ni_client, obstacle_detection, guard);
+}
+
 void RosInterface::obstacleDistanceCallback(const std_msgs::Float64::ConstPtr& msg){
     QMutex * pMutex = new QMutex();
     pMutex->lock();
@@ -131,29 +161,43 @@ void RosInterface::purePursuitCallback(const std_msgs::Float32MultiArray::ConstP
     for (int i = 0; i <= 9; ++i) info[i] = msg->data[i];
     pMutex->unlock();
     delete pMutex;
-    Q_EMIT newPurePursuitInfo(info);
+    Q_EMIT newPathInfo(info[0], info[1], info[5], info[2]);
+    Q_EMIT newVelInfo(info[4], info[6], info[7], info[8]);
 }
 
 void RosInterface::readyForLaunchingCallback(const std_msgs::Bool::ConstPtr& msg){
-    if(msg->data == true) Q_EMIT newLaunchCommand(MODE_INIT);
+    if(msg->data == true) Q_EMIT newLaunchCommand();
 }
 
 void RosInterface::steeringCallback(const std_msgs::Float64::ConstPtr& msg){
     QMutex * pMutex = new QMutex();
     pMutex->lock();
-    double angle = msg->data;
+    double angle = msg->data*180/M_PI;
     pMutex->unlock();
     delete pMutex;
     Q_EMIT newSteering(angle);
 }
 
-void RosInterface::velCallback(const arc_msgs::State::ConstPtr& msg){
+void RosInterface::stateCallback(const arc_msgs::State::ConstPtr& msg){
     QMutex * pMutex = new QMutex();
     pMutex->lock();
-    double velocity = msg->pose_diff;
+    double x = msg->pose.pose.position.x;
+    double y = msg->pose.pose.position.y;
+    double vel = msg->pose_diff;
+    int array_position = msg->current_arrayposition;
     pMutex->unlock();
     delete pMutex;
-    Q_EMIT newVel(velocity);
+    Q_EMIT newState(x, y, vel, array_position);
+}
+
+void RosInterface::stellgroessenCallback(const ackermann_msgs::AckermannDrive::ConstPtr& msg){
+    QMutex * pMutex = new QMutex();
+    pMutex->lock();
+    double steering_should = msg->steering_angle*180/M_PI;
+    double vel_should = msg->speed;
+    pMutex->unlock();
+    delete pMutex;
+    Q_EMIT newStellgroessen(vel_should, steering_should);
 }
 
 void RosInterface::wheelLeftCallback(const std_msgs::Float64::ConstPtr& msg){

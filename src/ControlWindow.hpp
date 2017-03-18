@@ -23,26 +23,40 @@ class ControlWindow : public QWidget
 
 public:
     ControlWindow(int argc, char** argv, QWidget * parent = 0);
-    Q_SLOT void launching();
+    Q_SLOT void converting();
     Q_SLOT void notstop();
     Q_SLOT void popUpNotstop();
-    Q_SLOT void setLaunchable(bool mode);
+    Q_SLOT void setLaunchable();
     Q_SLOT void shutdown();
     Q_SLOT void updateDevDisplay(double deviation);
+    Q_SLOT void updateLaunchedProgrammes1(bool gps, bool vi, bool velodyne, bool rovio,
+                                          bool state_estimation, bool orbslam);
+    Q_SLOT void updateLaunchedProgrammes2(bool controlling, bool ni_client, bool obstacle_detection,
+                                          bool guard);
     Q_SLOT void updateObstacleDisDisplay(double distance);
-    Q_SLOT void updatePurePursuitDisplay(float *info);
+    Q_SLOT void updatePathInfoDisplay(float dis_begin, float dis_end, float radius, float ref_steering);
     Q_SLOT void updateSteeringDisplay(double angle);
-    Q_SLOT void updateVelDisplay(double velocity);
+    Q_SLOT void updateStellgroessenDisplay(double vel_should, double steering_should);
+    Q_SLOT void updateStateDisplay(double x, double y, double velocity, int array_position);
     Q_SLOT void updateVelDevDisplay(double deviation);
+    Q_SLOT void updateVelInfoDisplay(float ref_vel, float bound_phys, float braking_dis, float bound_teach);
     Q_SLOT void updateWheelLeftDisplay(double wheel_left);
     Q_SLOT void updateWheelRightDisplay(double wheel_right);
 
 private:
-    QHBoxLayout *mainLayout;
+    //Init mode.
+    bool INIT_MODE;
+    //Main layouts.
+    QGridLayout *mainLayout;
+    QHBoxLayout *upperLayout;
+    QHBoxLayout *lowerLayout;
     QVBoxLayout *rightLayout;
     QVBoxLayout *leftLayout;
-    //Velocity display.
+    //State incl. Velocity display.
     QLineEdit *abs_vel_display_;
+    QLineEdit *x_pose_display_;
+    QLineEdit *y_pose_display_;
+    QLineEdit *array_pose_display_;
     //Path deviation display.
     QLineEdit *dev_display_;
     QLineEdit *vel_dev_display_;
@@ -52,18 +66,19 @@ private:
     QLineEdit *distance_start_display_;
     QLineEdit *distance_end_display_;
     QLineEdit *steering_reference_index_display_;
-    QLineEdit *steering_should_display_;
     QLineEdit *radius_reference_index_display_;
     QLineEdit *radius_path_display_;
     QLineEdit *velocity_bound_physical_display_;
     QLineEdit *velocity_bound_teach_display_;
-    QLineEdit *velocity_should_display_;
     QLineEdit *braking_distance_display_;
     //Steering information.
     QLineEdit *steering_ist_display_;
     //Wheel sensor information.
     QLineEdit *wheel_left_display_;
     QLineEdit *wheel_right_display_;
+    //Stellgroessen information.
+    QLineEdit *velocity_should_display_;
+    QLineEdit *steering_should_display_;
     //Stop button.
     QPushButton *stop_button_;
     //Shutdown button.
@@ -73,16 +88,43 @@ private:
     //Launch Button.
     QPushButton *launch_button_;
     bool system_launched_;
+    bool autonomous_mode_;
+    //Launched programs.
+    bool USE_CONTROLLING;
+    bool USE_GPS;
+    bool USE_NI_CLIENT;
+    bool USE_GUARD;
+    bool USE_OBSTACLE_DETECTION;
+    bool USE_STATE_ESTIMATION;
+    bool USE_VELODYNE;
+    bool USE_VI;
+    //Launching programms checkbox.
+    QRadioButton *controlling_box_;
+    QRadioButton *gps_box_;
+    QRadioButton *guard_box_;
+    QRadioButton *obstacle_detection_box_;
+    QRadioButton *orbslam_box_;
+    QRadioButton *ni_client_box_;
+    QRadioButton *rovio_box_;
+    QRadioButton *state_estimation_box_;
+    QRadioButton *velodyne_box_;
+    QRadioButton *vi_box_;
     //RosInterface.
     RosInterface RosInterface_;
     //Set layout functions.
     void buildInterface(bool mode);
+    void checkAndChangeBox(QRadioButton *button);
     void deleteWidgets();
     void setLaunchButton();
+    void setLaunchingProgrammsDisplay();
     void setModeDisplay(bool mode);
     void setShutdownButton();
     void setStopButton();
+    void setToManuellButton();
     void setUpDisplay(QLineEdit *display, std::string info, QVBoxLayout *bigLayout);
+    void setUpDisplay(QLineEdit *display, std::string info, QVBoxLayout *bigLayout, 
+                      QColor &base_color, QColor &text_color);
+    void setUpLaunchableProgrammBox(QRadioButton *button, std::string name);
     void setVelocityDisplay();
 };
 #endif
