@@ -145,9 +145,8 @@ void ControlWindow::buildInterface(bool mode){
 
 void ControlWindow::checkAndChangeBox(QRadioButton *button){
     button->setChecked(true);
-    QPalette palette;
-    palette.setColor(QPalette::Base,Qt::green);
-    button->setPalette(palette);
+    QString style_string("background: green;"); 
+    button->setStyleSheet(style_string);
 }
 
 void ControlWindow::converting(){
@@ -156,9 +155,8 @@ void ControlWindow::converting(){
         RosInterface_.launching();
         system_launched_ = false;
         //Adapt to manuell button.
-        QPalette palette;
-        palette.setColor(QPalette::Button,Qt::blue);
-        launch_button_->setPalette(palette);
+        QString style_string("background: blue;"); 
+        launch_button_->setStyleSheet(style_string);
         if(INIT_MODE){
             autonomous_mode_ = true;
             launch_button_->setText(tr("&Manuell Mode"));
@@ -192,9 +190,8 @@ void ControlWindow::popUpNotstop(){
 
 void ControlWindow::setLaunchable(){
     //Change launch button on green color and change text.
-    QPalette palette;
-    palette.setColor(QPalette::Button,Qt::green);
-    launch_button_->setPalette(palette);
+    QString style_string("background: green;"); 
+    launch_button_->setStyleSheet(style_string);
     launch_button_->setText(tr("&Ready !"));
     launch_button_->update();
     //Permit system launch.
@@ -306,9 +303,8 @@ void ControlWindow::updateWheelRightDisplay(double wheel_right){
 void ControlWindow::setLaunchButton(){
     launch_button_ = new QPushButton(tr("&System Booting"));
     launch_button_->setMinimumHeight(60);
-    QPalette palette;
-    palette.setColor(QPalette::Button,Qt::red);
-    launch_button_->setPalette(palette);
+    QString style_string("background: orange;"); 
+    launch_button_->setStyleSheet(style_string);
     QHBoxLayout *launching_layout = new QHBoxLayout();
     launching_layout->addWidget(launch_button_);
     rightLayout->addLayout(launching_layout);
@@ -318,11 +314,11 @@ void ControlWindow::setLaunchButton(){
 }
 
 void ControlWindow::setLaunchingProgrammsDisplay(){
-   if(USE_CONTROLLING) setUpLaunchableProgrammBox(controlling_box_, "CONTROLLER");
+   if(USE_CONTROLLING && INIT_MODE) setUpLaunchableProgrammBox(controlling_box_, "CONTROLLER");
    if(USE_GPS) setUpLaunchableProgrammBox(gps_box_, "GPS");
    if(USE_NI_CLIENT) setUpLaunchableProgrammBox(ni_client_box_, "NI");
-   if(USE_OBSTACLE_DETECTION) setUpLaunchableProgrammBox(obstacle_detection_box_, "OBSTACLES");
-   if(USE_GUARD) setUpLaunchableProgrammBox(guard_box_, "GUARD");
+   if(USE_OBSTACLE_DETECTION && INIT_MODE) setUpLaunchableProgrammBox(obstacle_detection_box_, "OBSTACLES");
+   if(USE_GUARD && INIT_MODE) setUpLaunchableProgrammBox(guard_box_, "GUARD");
    if(USE_STATE_ESTIMATION){
     setUpLaunchableProgrammBox(rovio_box_, "ROVIO");
     setUpLaunchableProgrammBox(state_estimation_box_, "SE");
@@ -395,9 +391,8 @@ void ControlWindow::setUpLaunchableProgrammBox(QRadioButton *button, std::string
     QLabel *label = new QLabel();
     QString label_string = QString::fromStdString(name);
     label->setText(label_string);
-    QPalette palette;
-    palette.setColor(QPalette::Base,Qt::red);
-    button->setPalette(palette);
+    QString style_string("background: red;"); 
+    button->setStyleSheet(style_string);
     button->setCheckable(false);
     button->setAutoExclusive(false);
     layout->addWidget(button);
