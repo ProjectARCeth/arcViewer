@@ -99,21 +99,21 @@ private:
     bool USE_VELODYNE;
     bool USE_VI;
     //Launching programms checkbox.
-    QRadioButton *controlling_box_;
-    QRadioButton *gps_box_;
-    QRadioButton *guard_box_;
-    QRadioButton *obstacle_detection_box_;
-    QRadioButton *orbslam_box_;
-    QRadioButton *ni_client_box_;
-    QRadioButton *rovio_box_;
-    QRadioButton *state_estimation_box_;
-    QRadioButton *velodyne_box_;
-    QRadioButton *vi_box_;
+    QLabel *controlling_box_;
+    QLabel *gps_box_;
+    QLabel *guard_box_;
+    QLabel *obstacle_detection_box_;
+    QLabel *orbslam_box_;
+    QLabel *ni_client_box_;
+    QLabel *rovio_box_;
+    QLabel *state_estimation_box_;
+    QLabel *velodyne_box_;
+    QLabel *vi_box_;
     //RosInterface.
     RosInterface RosInterface_;
     //Set layout functions.
     void buildInterface(bool mode);
-    void checkAndChangeBox(QRadioButton *button);
+    void checkAndChangeBox(QLabel *label);
     void deleteWidgets();
     void setLaunchButton();
     void setLaunchingProgrammsDisplay();
@@ -124,7 +124,7 @@ private:
     void setUpDisplay(QLineEdit *display, std::string info, QVBoxLayout *bigLayout);
     void setUpDisplay(QLineEdit *display, std::string info, QVBoxLayout *bigLayout, 
                       QColor &base_color, QColor &text_color);
-    void setUpLaunchableProgrammBox(QRadioButton *button, std::string name);
+    void setUpLaunchableProgrammBox(QLabel *label, std::string name);
     void setVelocityDisplay();
 };
 #endif

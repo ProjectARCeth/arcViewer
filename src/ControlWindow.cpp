@@ -53,16 +53,16 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
     wheel_right_display_ = new QLineEdit();
     mode_display_ = new QLineEdit();
     //Init checkboxes for launched programs.
-    controlling_box_ = new QRadioButton();
-    gps_box_ = new QRadioButton();
-    guard_box_ = new QRadioButton();
-    obstacle_detection_box_ = new QRadioButton();
-    orbslam_box_ = new QRadioButton();
-    ni_client_box_ = new QRadioButton();
-    rovio_box_ = new QRadioButton();
-    state_estimation_box_ = new QRadioButton();
-    velodyne_box_ = new QRadioButton();
-    vi_box_ = new QRadioButton();
+    controlling_box_ = new QLabel();
+    gps_box_ = new QLabel();
+    guard_box_ = new QLabel();
+    obstacle_detection_box_ = new QLabel();
+    orbslam_box_ = new QLabel();
+    ni_client_box_ = new QLabel();
+    rovio_box_ = new QLabel();
+    state_estimation_box_ = new QLabel();
+    velodyne_box_ = new QLabel();
+    vi_box_ = new QLabel();
     //Building up interface.
     buildInterface(INIT_MODE);
     //Merging main layout.
@@ -143,32 +143,31 @@ void ControlWindow::buildInterface(bool mode){
     setLaunchingProgrammsDisplay();
 }
 
-void ControlWindow::checkAndChangeBox(QRadioButton *button){
-    button->setChecked(true);
-    QString style_string("background: green;"); 
-    button->setStyleSheet(style_string);
+void ControlWindow::checkAndChangeBox(QLabel *label){
+    QString style_string("background-color: green;"); 
+    label->setStyleSheet(style_string);
 }
 
 void ControlWindow::converting(){
-    //Launch system only one time.
-    if(system_launched_){
-        RosInterface_.launching();
-        system_launched_ = false;
-        //Adapt to manuell button.
-        QString style_string("background: blue;"); 
-        launch_button_->setStyleSheet(style_string);
-        if(INIT_MODE){
-            autonomous_mode_ = true;
-            launch_button_->setText(tr("&Manuell Mode"));
-        }
-        else launch_button_->setText(tr("&System started"));
-    }
     //Change to manuell iff autonomous.
     if(autonomous_mode_ && INIT_MODE){
         RosInterface_.changeToManuell();
         autonomous_mode_ = false;
         //Reset to launchable mode.
         system_launched_ = true;
+    }
+    //Launch system only one time.
+    if(system_launched_){
+        RosInterface_.launching();
+        system_launched_ = false;
+        //Adapt to manuell label.
+        QString style_string("background-color: blue;"); 
+        launch_button_->setStyleSheet(style_string);
+        if(INIT_MODE){
+            autonomous_mode_ = true;
+            launch_button_->setText(tr("&Manuell Mode"));
+        }
+        else launch_button_->setText(tr("&System started"));
     }
 }
 
@@ -189,8 +188,8 @@ void ControlWindow::popUpNotstop(){
 }
 
 void ControlWindow::setLaunchable(){
-    //Change launch button on green color and change text.
-    QString style_string("background: green;"); 
+    //Change launch label on green color and change text.
+    QString style_string("background-color: green;"); 
     launch_button_->setStyleSheet(style_string);
     launch_button_->setText(tr("&Ready !"));
     launch_button_->update();
@@ -386,17 +385,18 @@ void ControlWindow::setUpDisplay(QLineEdit *display, std::string info, QVBoxLayo
     bigLayout->addLayout(layout);
 }
 
-void ControlWindow::setUpLaunchableProgrammBox(QRadioButton *button, std::string name){
+void ControlWindow::setUpLaunchableProgrammBox(QLabel *label, std::string name){
     QVBoxLayout *layout = new QVBoxLayout();
-    QLabel *label = new QLabel();
+    QLabel *name_label = new QLabel();
     QString label_string = QString::fromStdString(name);
-    label->setText(label_string);
-    QString style_string("background: red;"); 
-    button->setStyleSheet(style_string);
-    button->setCheckable(false);
-    button->setAutoExclusive(false);
-    layout->addWidget(button);
+    name_label->setText(label_string);
+    name_label->setAlignment(Qt::AlignCenter);
+    QString style_string("background-color: red;"); 
+    label->setStyleSheet(style_string);
+    label->setFixedWidth(40);
+    label->setAlignment(Qt::AlignCenter);
     layout->addWidget(label);
+    layout->addWidget(name_label);
     layout->setAlignment(Qt::AlignHCenter);
     lowerLayout->addLayout(layout); 
 }
