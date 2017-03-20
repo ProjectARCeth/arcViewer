@@ -48,10 +48,13 @@ private:
     bool INIT_MODE;
     //Main layouts.
     QGridLayout *mainLayout;
-    QHBoxLayout *upperLayout;
-    QHBoxLayout *lowerLayout;
-    QVBoxLayout *rightLayout;
-    QVBoxLayout *leftLayout;
+    QVBoxLayout *topLeftLayout;
+    QVBoxLayout *topRightLayout;
+    QHBoxLayout *lowerLeftLayout;
+    QHBoxLayout *lowerRightLayout;
+    QVBoxLayout *middleRightLayout;
+    QVBoxLayout *middleCenterLayout;
+    QVBoxLayout *middleLeftLayout;
     //State incl. Velocity display.
     QLineEdit *abs_vel_display_;
     QLineEdit *x_pose_display_;
@@ -115,17 +118,17 @@ private:
     void buildInterface(bool mode);
     void checkAndChangeBox(QLabel *label);
     void deleteWidgets();
-    void setLaunchButton();
+    void setLaunchButton(QHBoxLayout *bigLayout);
     void setLaunchingProgrammsDisplay();
-    void setModeDisplay(bool mode);
-    void setShutdownButton();
-    void setStopButton();
+    void setModeDisplay(bool mode, QVBoxLayout *bigLayout);
+    void setShutdownButton(QVBoxLayout *bigLayout);
+    void setStopButton(QVBoxLayout *bigLayout);
     void setToManuellButton();
     void setUpDisplay(QLineEdit *display, std::string info, QVBoxLayout *bigLayout);
     void setUpDisplay(QLineEdit *display, std::string info, QVBoxLayout *bigLayout, 
                       QColor &base_color, QColor &text_color);
     void setUpLaunchableProgrammBox(QLabel *label, std::string name);
-    void setVelocityDisplay();
+    void setVelocityDisplay(QVBoxLayout *bigLayout);
 };
 #endif
 

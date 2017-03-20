@@ -25,11 +25,14 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
     USE_CONTROLLING = true;
     if(strlen(*(argv + 9)) == 5) USE_CONTROLLING = false;
     //Init big layouts.
-    leftLayout = new QVBoxLayout();
-    rightLayout = new QVBoxLayout();
-    lowerLayout = new QHBoxLayout();
-    upperLayout = new QHBoxLayout();
-    mainLayout = new QGridLayout();
+    QGridLayout *mainLayout = new QGridLayout();
+    topLeftLayout = new QVBoxLayout();;
+    topRightLayout = new QVBoxLayout();
+    lowerLeftLayout = new QHBoxLayout();
+    lowerRightLayout = new QHBoxLayout();
+    middleRightLayout = new QVBoxLayout();
+    middleCenterLayout = new QVBoxLayout();
+    middleLeftLayout = new QVBoxLayout();
     //Init small layouts.
     abs_vel_display_ = new QLineEdit();
     x_pose_display_ = new QLineEdit();
@@ -65,11 +68,14 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
     vi_box_ = new QLabel();
     //Building up interface.
     buildInterface(INIT_MODE);
-    //Merging main layout.
-    upperLayout->addLayout(leftLayout);
-    upperLayout->addLayout(rightLayout);
-    mainLayout->addLayout(upperLayout, 0, 0);
-    mainLayout->addLayout(lowerLayout, 1, 0);
+    //Merging main layout (x_0, y_0, x_delta, y_delta).
+    mainLayout->addLayout(topLeftLayout, 0, 0, 1, 2);
+    mainLayout->addLayout(topRightLayout, 0, 2);
+    mainLayout->addLayout(middleLeftLayout, 1, 0);
+    mainLayout->addLayout(middleCenterLayout, 1, 1);
+    mainLayout->addLayout(middleRightLayout, 1, 2);
+    mainLayout->addLayout(lowerLeftLayout, 2, 0, 1, 2);
+    mainLayout->addLayout(lowerRightLayout, 2, 2);
     setLayout(mainLayout);
     //Init window.
     show();
@@ -96,7 +102,7 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
 
 void ControlWindow::buildInterface(bool mode){
     //Delete current interface.
-    deleteWidgets();
+    // deleteWidgets();
     //Create color.
     QColor black = Qt::black;
     QColor blue =  Qt::blue;
@@ -107,39 +113,39 @@ void ControlWindow::buildInterface(bool mode){
     QColor white = Qt::white;
     QColor yellow = Qt::yellow;
     //Adding mode.
-    setModeDisplay(mode);
+    setModeDisplay(mode, topRightLayout);
     //Adding labels.
-    setVelocityDisplay();
+    setVelocityDisplay(topLeftLayout);
     if(mode){
-        setUpDisplay(velocity_should_display_, "Vel should", leftLayout, green, black);
-        setUpDisplay(steering_should_display_, "Steering should", leftLayout, green, black);
+        setUpDisplay(velocity_should_display_, "Vel should", middleLeftLayout, green, black);
+        setUpDisplay(steering_should_display_, "Steering should", middleLeftLayout, green, black);
     }
-    setUpDisplay(steering_ist_display_, "Steering ist", leftLayout, cyan, black);
-    setUpDisplay(wheel_left_display_, "Wheel left", leftLayout, cyan, black);
-    setUpDisplay(wheel_right_display_, "Wheel right", leftLayout, cyan, black); 
-    setUpDisplay(x_pose_display_, "X Position", leftLayout, cyan, black);
-    setUpDisplay(y_pose_display_, "Y Position", leftLayout, cyan, black);
-    setUpDisplay(array_pose_display_, "Array Position", leftLayout, cyan, black); 
+    setUpDisplay(steering_ist_display_, "Steering ist", middleLeftLayout, cyan, black);
+    setUpDisplay(wheel_left_display_, "Wheel left", middleLeftLayout, cyan, black);
+    setUpDisplay(wheel_right_display_, "Wheel right", middleLeftLayout, cyan, black); 
+    setUpDisplay(x_pose_display_, "X Position", middleLeftLayout, cyan, black);
+    setUpDisplay(y_pose_display_, "Y Position", middleLeftLayout, cyan, black); 
     if(mode){
-        setUpDisplay(radius_reference_index_display_, "Radius ref", leftLayout, magenta, black);
-        setUpDisplay(steering_reference_index_display_, "Steering ref", leftLayout, magenta, black);
-        setUpDisplay(radius_path_display_, "Radius path", leftLayout, magenta, black);
-        setUpDisplay(velocity_bound_physical_display_, "Vel bound phys", leftLayout, magenta, black);
-        setUpDisplay(velocity_bound_teach_display_, "Vel bound teach", leftLayout, magenta, black);
+        setUpDisplay(array_pose_display_, "Array Position", middleCenterLayout, magenta, black);
+        setUpDisplay(radius_reference_index_display_, "Radius ref", middleCenterLayout, magenta, black);
+        setUpDisplay(steering_reference_index_display_, "Steering ref", middleCenterLayout, magenta, black);
+        setUpDisplay(radius_path_display_, "Radius path", middleCenterLayout, magenta, black);
+        setUpDisplay(velocity_bound_physical_display_, "Vel bound phys", middleCenterLayout, magenta, black);
+        setUpDisplay(velocity_bound_teach_display_, "Vel bound teach", middleCenterLayout, magenta, black);
     }           
     if(mode){
-        setUpDisplay(distance_start_display_, "Distance start", rightLayout, yellow, black);
-        setUpDisplay(distance_end_display_, "Distance end", rightLayout, yellow, black);
+        setUpDisplay(distance_start_display_, "Distance start", middleRightLayout, yellow, black);
+        setUpDisplay(distance_end_display_, "Distance end", middleRightLayout, yellow, black);
     }
     if(mode){
-        setUpDisplay(braking_distance_display_, "Braking distance", rightLayout, red, black);
-        setUpDisplay(obstacle_dis_display_, "Obstacle distance", rightLayout, red, black);
-        setUpDisplay(dev_display_, "Path deviation", rightLayout, red, black);
-        setUpDisplay(vel_dev_display_, "Vel deviation", rightLayout, red, black);
+        setUpDisplay(braking_distance_display_, "Braking distance", middleRightLayout, red, black);
+        setUpDisplay(obstacle_dis_display_, "Obstacle distance", middleRightLayout, red, black);
+        setUpDisplay(dev_display_, "Path deviation", middleRightLayout, red, black);
+        setUpDisplay(vel_dev_display_, "Vel deviation", middleRightLayout, red, black);
     }
-    setShutdownButton();
-    setStopButton();
-    setLaunchButton();
+    setShutdownButton(middleRightLayout);
+    setStopButton(middleRightLayout);
+    setLaunchButton(lowerRightLayout);
     setLaunchingProgrammsDisplay();
 }
 
@@ -299,21 +305,21 @@ void ControlWindow::updateWheelRightDisplay(double wheel_right){
     wheel_right_display_->setText(rightVel);
 }
 
-void ControlWindow::setLaunchButton(){
+void ControlWindow::setLaunchButton(QHBoxLayout *bigLayout){
     launch_button_ = new QPushButton(tr("&System Booting"));
     launch_button_->setMinimumHeight(60);
     QString style_string("background: orange;"); 
     launch_button_->setStyleSheet(style_string);
     QHBoxLayout *launching_layout = new QHBoxLayout();
     launching_layout->addWidget(launch_button_);
-    rightLayout->addLayout(launching_layout);
+    bigLayout->addLayout(launching_layout);
     //Reset launchable and autonomous.
     system_launched_ = false;
     autonomous_mode_ = false;
 }
 
 void ControlWindow::setLaunchingProgrammsDisplay(){
-   if(USE_CONTROLLING && INIT_MODE) setUpLaunchableProgrammBox(controlling_box_, "CONTROLLER");
+   if(USE_CONTROLLING && INIT_MODE) setUpLaunchableProgrammBox(controlling_box_, "CONT");
    if(USE_GPS) setUpLaunchableProgrammBox(gps_box_, "GPS");
    if(USE_NI_CLIENT) setUpLaunchableProgrammBox(ni_client_box_, "NI");
    if(USE_OBSTACLE_DETECTION && INIT_MODE) setUpLaunchableProgrammBox(obstacle_detection_box_, "OBSTACLES");
@@ -327,35 +333,38 @@ void ControlWindow::setLaunchingProgrammsDisplay(){
    if(USE_VI) setUpLaunchableProgrammBox(vi_box_, "VI");
 }
 
-void ControlWindow::setModeDisplay(bool mode){
+void ControlWindow::setModeDisplay(bool mode, QVBoxLayout *bigLayout){
     QHBoxLayout *mode_layout = new QHBoxLayout();
     mode_display_ = new QLineEdit();
     QPalette palette;
     palette.setColor(QPalette::Base,Qt::black);
     palette.setColor(QPalette::Text,Qt::white);
     mode_display_->setPalette(palette);
+    mode_display_->setAlignment(Qt::AlignCenter);
+    QFont sansFont("Times", 17, QFont::Bold);
+    mode_display_->setFont(sansFont);
     if (!mode) mode_display_->setText(tr("TEACH"));
     else mode_display_->setText(tr("REPEAT"));
     mode_layout->addWidget(mode_display_);
     //Adding to layout.
-    rightLayout->addLayout(mode_layout);
+    bigLayout->addLayout(mode_layout);
 }
 
-void ControlWindow::setStopButton(){
+void ControlWindow::setStopButton(QVBoxLayout *bigLayout){
     stop_button_ = new QPushButton();
     stop_button_->setIcon(QIcon(":/images/stop.png"));
     stop_button_->setIconSize(QSize(50, 50));
     QHBoxLayout *stop_layout = new QHBoxLayout();
     stop_layout->addWidget(stop_button_);
-    rightLayout->addLayout(stop_layout);
+    bigLayout->addLayout(stop_layout);
 }
 
-void ControlWindow::setShutdownButton(){
+void ControlWindow::setShutdownButton(QVBoxLayout *bigLayout){
     shutdown_button_ = new QPushButton(tr("&Controlled Shutdown"));
     shutdown_button_->setIconSize(QSize(50, 50));
     QHBoxLayout *shutdown_layout = new QHBoxLayout();
     shutdown_layout->addWidget(shutdown_button_);
-    rightLayout->addLayout(shutdown_layout);
+    bigLayout->addLayout(shutdown_layout);
 }
 
 void ControlWindow::setUpDisplay(QLineEdit *display, std::string info, QVBoxLayout *bigLayout){
@@ -378,6 +387,7 @@ void ControlWindow::setUpDisplay(QLineEdit *display, std::string info, QVBoxLayo
     palette.setColor(QPalette::Text,text_color);
     display->setPalette(palette);
     display->setText(tr("0.0"));
+    display->setMaximumWidth(50);
     QString label_string = QString::fromStdString(info + ":");
     label->setText(label_string);
     layout->addWidget(label);
@@ -393,15 +403,16 @@ void ControlWindow::setUpLaunchableProgrammBox(QLabel *label, std::string name){
     name_label->setAlignment(Qt::AlignCenter);
     QString style_string("background-color: red;"); 
     label->setStyleSheet(style_string);
-    label->setFixedWidth(40);
+    label->setFixedWidth(50);
+    label->setFixedHeight(20);
     label->setAlignment(Qt::AlignCenter);
     layout->addWidget(label);
     layout->addWidget(name_label);
     layout->setAlignment(Qt::AlignHCenter);
-    lowerLayout->addLayout(layout); 
+    lowerLeftLayout->addLayout(layout); 
 }
 
-void ControlWindow::setVelocityDisplay(){
+void ControlWindow::setVelocityDisplay(QVBoxLayout *bigLayout){
     //Set up the Velocity Display - absolute Value.
     QHBoxLayout *abs_layout = new QHBoxLayout();
     QPalette palette;
@@ -413,5 +424,5 @@ void ControlWindow::setVelocityDisplay(){
     abs_vel_display_->setText(tr("0.0"));
     abs_layout->addWidget(abs_vel_display_);
     //Adding to layout.
-    leftLayout->addLayout(abs_layout);
+    bigLayout->addLayout(abs_layout);
 }
