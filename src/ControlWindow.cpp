@@ -387,7 +387,7 @@ void ControlWindow::setUpDisplay(QLineEdit *display, std::string info, QVBoxLayo
     palette.setColor(QPalette::Text,text_color);
     display->setPalette(palette);
     display->setText(tr("0.0"));
-    display->setMaximumWidth(50);
+    display->setMaximumWidth(100);
     QString label_string = QString::fromStdString(info + ":");
     label->setText(label_string);
     layout->addWidget(label);
