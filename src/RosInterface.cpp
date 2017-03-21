@@ -1,5 +1,22 @@
 #include "RosInterface.hpp"
 
+std::string DEVIATION_TOPIC;
+std::string DEVIATION_VELOCITY_TOPIC;
+std::string GUI_NOTSTOP_TOPIC;
+std::string LAUNCHING_INFO_TOPIC;
+std::string LAUNCHING_COMMAND_TOPIC;
+std::string NOTSTOP_TOPIC;
+std::string OBSTACLE_DISTANCE_TOPIC;
+std::string PURE_PURSUIT_INFO_TOPIC;
+std::string READY_FOR_LAUNCHING_TOPIC;
+std::string SHUTDOWN_TOPIC;
+std::string STATE_TOPIC;
+std::string STEERING_TOPIC;
+std::string STELLGROESSEN_TOPIC;
+std::string WHEEL_LEFT_TOPIC;
+std::string WHEEL_RIGHT_TOPIC;
+int QUEUE_LENGTH;
+
 RosInterface::RosInterface(int argc, char **pArgv){
     init_argc_ = argc;
     init_argv_ = pArgv;
@@ -40,6 +57,7 @@ bool RosInterface::init(){
     node.getParam("/general/QUEUE_LENGTH", QUEUE_LENGTH);
     node.getParam("/topic/NAVIGATION_INFO", PURE_PURSUIT_INFO_TOPIC);
     node.getParam("/topic/NOTSTOP", NOTSTOP_TOPIC);
+    node.getParam("/topic/GUI_STOP", GUI_NOTSTOP_TOPIC);
     node.getParam("/topic/OBSTACLE_DISTANCE", OBSTACLE_DISTANCE_TOPIC);
     node.getParam("/topic/READY_FOR_DRIVING", READY_FOR_LAUNCHING_TOPIC);
     node.getParam("/topic/RUNNING_PROGRAMMES", LAUNCHING_INFO_TOPIC);
@@ -54,7 +72,7 @@ bool RosInterface::init(){
     node.getParam("/topic/WHEEL_REAR_RIGHT", WHEEL_RIGHT_TOPIC);
     //Init publisher and subscriber.
     launch_command_pub_ = node.advertise<std_msgs::Bool>(LAUNCHING_COMMAND_TOPIC, QUEUE_LENGTH);
-    notstop_pub_ = node.advertise<std_msgs::Bool>(NOTSTOP_TOPIC, QUEUE_LENGTH);
+    notstop_pub_ = node.advertise<std_msgs::Bool>(GUI_NOTSTOP_TOPIC, QUEUE_LENGTH);
     shutdown_pub_ = node.advertise<std_msgs::Bool>(SHUTDOWN_TOPIC, QUEUE_LENGTH);
     deviation_sub_ = node.subscribe(DEVIATION_TOPIC, QUEUE_LENGTH, &RosInterface::devCallback, this);
     deviation_vel_sub_ = node.subscribe(DEVIATION_VELOCITY_TOPIC, QUEUE_LENGTH, &RosInterface::devVelCallback, this);

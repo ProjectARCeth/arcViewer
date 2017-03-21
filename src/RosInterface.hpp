@@ -84,21 +84,6 @@ private:
     //Yaml constants.
     bool MODE_INIT;
     int MIN_PUBLISH_NOTSTOP_COUNT;
-    std::string DEVIATION_TOPIC;
-    std::string DEVIATION_VELOCITY_TOPIC;
-    std::string LAUNCHING_INFO_TOPIC;
-    std::string LAUNCHING_COMMAND_TOPIC;
-    std::string NOTSTOP_TOPIC;
-    std::string OBSTACLE_DISTANCE_TOPIC;
-    std::string PURE_PURSUIT_INFO_TOPIC;
-    std::string READY_FOR_LAUNCHING_TOPIC;
-    std::string SHUTDOWN_TOPIC;
-    std::string STATE_TOPIC;
-    std::string STEERING_TOPIC;
-    std::string STELLGROESSEN_TOPIC;
-    std::string WHEEL_LEFT_TOPIC;
-    std::string WHEEL_RIGHT_TOPIC;
-    int QUEUE_LENGTH;
     //Thread.
     QThread * thread_;
 };
