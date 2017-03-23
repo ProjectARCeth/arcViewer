@@ -60,6 +60,8 @@ private:
     QLineEdit *x_pose_display_;
     QLineEdit *y_pose_display_;
     QLineEdit *array_pose_display_;
+    //State incl. CPU
+    QLineEdit *cpu_display_;
     //Path deviation display.
     QLineEdit *dev_display_;
     QLineEdit *vel_dev_display_;

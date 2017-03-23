@@ -38,8 +38,8 @@ ControlWindow::ControlWindow(int argc, char **argv,get *parent)
     x_pose_display_ = new QLineEdit();
     y_pose_display_ = new QLineEdit();
 
-    cpu_display_ = new QLineEdit();
-    
+    cpu_display_ = new QLineEdit();                             //
+
     array_pose_display_ = new QLineEdit();
     dev_display_ = new QLineEdit();
     vel_dev_display_ = new QLineEdit();
@@ -128,6 +128,7 @@ void ControlWindow::buildInterface(bool mode){
     setUpDisplay(wheel_right_display_, "Wheel right", middleLeftLayout, cyan, black); 
     setUpDisplay(x_pose_display_, "X Position", middleLeftLayout, cyan, black);
     setUpDisplay(y_pose_display_, "Y Position", middleLeftLayout, cyan, black); 
+    setUpDisplay(cpu_display_, "CPU Load", middleLeftLayout, cyan, black);
     if(mode){
         setUpDisplay(array_pose_display_, "Array Position", middleCenterLayout, magenta, black);
         setUpDisplay(radius_reference_index_display_, "Radius ref", middleCenterLayout, magenta, black);
