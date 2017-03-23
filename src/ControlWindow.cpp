@@ -161,6 +161,7 @@ void ControlWindow::converting(){
         autonomous_mode_ = false;
         //Reset to launchable mode.
         system_launched_ = true;
+        launch_button_->setText(tr("&Autonomous"));
     }
     //Launch system only one time.
     if(system_launched_){
