@@ -1,6 +1,6 @@
 #include "ControlWindow.hpp"
 
-ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
+ControlWindow::ControlWindow(int argc, char **argv,get *parent)
     : QWidget(parent),
       RosInterface_(argc, argv)
 {
@@ -34,9 +34,12 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
     middleCenterLayout = new QVBoxLayout();
     middleLeftLayout = new QVBoxLayout();
     //Init small layouts.
-    abs_vel_display_ = new QLineEdit();
+
     x_pose_display_ = new QLineEdit();
     y_pose_display_ = new QLineEdit();
+
+    cpu_display_ = new QLineEdit();
+    
     array_pose_display_ = new QLineEdit();
     dev_display_ = new QLineEdit();
     vel_dev_display_ = new QLineEdit();
