@@ -38,7 +38,7 @@ ControlWindow::ControlWindow(int argc, char **argv,get *parent)
     x_pose_display_ = new QLineEdit();
     y_pose_display_ = new QLineEdit();
 
-    cpu_display_ = new QLineEdit();                             //
+    cpu_display_ = new QLineEdit();                   //
 
     array_pose_display_ = new QLineEdit();
     dev_display_ = new QLineEdit();
