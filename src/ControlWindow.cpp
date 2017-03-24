@@ -161,10 +161,12 @@ void ControlWindow::converting(){
         autonomous_mode_ = false;
         //Reset to launchable mode.
         system_launched_ = true;
+        QString style_string("background-color: yellow;"); 
+        launch_button_->setStyleSheet(style_string);
         launch_button_->setText(tr("&Autonomous"));
     }
     //Launch system only one time.
-    if(system_launched_){
+    else if(system_launched_){
         RosInterface_.launching();
         system_launched_ = false;
         //Adapt to manuell label.
@@ -191,7 +193,10 @@ void ControlWindow::notstop(){
 }
 
 void ControlWindow::popUpNotstop(){
-    QMessageBox::warning(this, "CAUTION", "CAUTION. Emergency STOP !");
+    QString style_string("background-color:red;"); 
+    stop_button_->setStyleSheet(style_string);
+    stop_button_->setText(tr("&NOTSTOP"));
+    // QMessageBox::warning(this, "CAUTION", "CAUTION. Emergency STOP !");
 }
 
 void ControlWindow::setLaunchable(){
