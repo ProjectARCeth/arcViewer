@@ -6,7 +6,7 @@ find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Core REQUIRED)
 
 catkin_package(
-  CATKIN_DEPENDS roscpp geometry_msgs sensor_msgs ackermann_msgs std_msgs arc_msgs arc_tools
+  CATKIN_DEPENDS roscpp rospy geometry_msgs sensor_msgs ackermann_msgs std_msgs arc_msgs arc_tools
   DEPENDS system-lib
 )
 
