@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from matplotlib.backends.backend_pdf import PdfPages, Stream
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import numpy as np
-import pandas as pd
+import os
 import rospy
 import sys
 
@@ -11,8 +11,10 @@ from arc_msgs.msg import State
 from nav_msgs.msg import Path
 from std_msgs.msg import Float64, Float32MultiArray
 
-#Name of pdf file.
-file_name = sys.argv[0] + "_analyse.pdf"
+#Path to latex.
+file_path = "/home/sele/Paths/"
+#General constants.
+v_freedom = 1.5 #rospy.get_param("/control/V_FREEDOM")
 #Topic names.
 navigation_info_topic = 'navigation_info' #rospy.get_param("/topic/NAVIGATION_INFO")
 repeat_path_topic = 'path' #rospy.get_param("/topic/PATH")
@@ -23,29 +25,31 @@ teach_path_topic = 'teach_path' #rospy.get_param("/topic/TEACH_PATH")
 tracking_error_topic = 'tracking_error' #rospy.get_param("/topic/TRACKING_ERROR")
 wheel_left_topic = 'wheel_rear_left' #rospy.get_param("/topic/WHEEL_REAR_LEFT")
 wheel_right_topic = 'wheel_rear_right' #rospy.get_param("/topic/WHEEL_REAR_RIGHT")
-#Init time.
+#Init time and array index.
 init_time = 0
 #Information vectors.
-braking_distance = []
-distance_end = []
-distance_start = []
-index_path = []
-index_steering = []
-index_velocity = []
-radius = []
-repeat_path = []
-should_steering_angle = []
-should_velocity = []
-should_safe_steering_angle = []
-should_safe_velocity = []
-teach_path = []
-time = []
-tracking_error = []
-velocity = []
-velocity_bound_physical = []
-velocity_bound_teach = []
-wheel_left = []
-wheel_right = []
+braking_distance = np.random.rand(100)
+distance_end = np.random.rand(100)
+distance_start = np.random.rand(100)
+index_path = np.random.rand(100)
+index_steering = np.random.rand(100)
+index_velocity = np.random.rand(100)
+radius = np.random.rand(100)
+repeat_path = np.random.rand(5, 2)
+should_steering_angle = np.random.rand(100)
+should_velocity = np.random.rand(100)
+should_safe_steering_angle = np.random.rand(100)
+should_safe_velocity = np.random.rand(100)
+steering_angle = np.random.rand(100)
+teach_path = np.random.rand(5, 2)
+time = np.random.rand(100)
+tracking_error = np.random.rand(100)
+velocity = np.random.rand(100)
+velocity_bound_physical = np.random.rand(100)
+velocity_bound_teach = np.random.rand(100)
+velocity_teach = np.random.rand(100)
+wheel_left = np.random.rand(100)
+wheel_right = np.random.rand(100)
 #Current information.
 current_breaking_distance = 0
 current_distance_end = 0
@@ -66,24 +70,31 @@ current_velocity_bound_teach = 0
 current_wheel_left = 0
 current_wheel_right = 0
 
-def createPDF():
-	#Create PDF.
-	pdf = PdfPages('Test_Analysis.pdf')
-	#Plotting paths.
-	np_teach_path = np.array(teach_path)
-	np_repeat_path = np.array(repeat_path)
-	plt.plot(np_teach_path[0,],np_teach_path[1,],'ro', 
-			 np_repeat_path[0,],np_repeat_path[1,],'bo')
-	plt.title('Teach and Repeat Path')
-	pdf.savefig()
-	plt.close()
-	#Create Dataframe.
-	df = pd.DataFrame({'time':time,'ss': should_steering_angle})
-	table = df.plot()
-	fig = table.get_figure()
-	pdf.savefig()
-	#Close PDF.
-	pp.close()
+def createTxtEntry(file, array, index, name):
+	if(index == -1):
+		string = name
+	else:
+		try:
+			string = str(round(array[index], 4))
+		except Exception, e:
+			pass
+	file.write("\t"+string)
+
+def getIndexArray(array):
+	index_array = []
+	index = 0
+	for element in array:
+		index_array.append(index)
+		index += 1
+	return index_array
+
+def getTwoArrays(array):
+	x = []
+	y = []
+	for i in range(0, len(array)):
+		x.append(array[i][0])
+		y.append(array[i][1])
+	return x,y
 
 def navigationInfoCallback(msg):
 	current_distance_start = msg.data[0]
@@ -141,11 +152,13 @@ def update():
 	should_velocity.append(current_should_velocity)
 	should_safe_steering_angle.append(current_should_safe_steering_angle)
 	should_safe_velocity.append(current_should_safe_velocity)
+	steering_angle.append(current_steering_angle)
 	time.append(rospy.get_rostime()-init_time)
 	tracking_error.append(current_tracking_error)
 	velocity.append(current_velocity)
 	velocity_bound_physical.append(current_velocity_bound_physical)
 	velocity_bound_teach.append(current_velocity_bound_teach)
+	velocity_teach.append(current_velocity_bound_teach-v_freedom)
 	wheel_left.append(current_wheel_left)
 	wheel_right.append(current_wheel_right)
 
@@ -175,10 +188,74 @@ def main():
 	rate = rospy.Rate(10)
 	while not rospy.is_shutdown():
 		rate.sleep()
-	#Writing in pdf.
-	createPDF()
+	#Create plots.
+	fig = plt.figure(figsize=(10, 7))
+	gs = gridspec.GridSpec(4, 4)
+	gs.update(hspace=0.4)
 
+	ax0 = plt.subplot(gs[0, :4])
+	plt.title("Path Analysis")
+	index_array = getIndexArray(tracking_error)
+	plt.plot(index_array, tracking_error)
+	plt.ylabel('tracking_error[m]')
 
+	ax1 = plt.subplot(gs[1, :4])
+	index_base = getIndexArray(velocity)
+	plt.plot(index_base, velocity)
+	index_target = getIndexArray(velocity_teach)
+	plt.plot(index_target, velocity_teach)
+	plt.ylabel('velocity[m/s]')
+
+	ax2 = plt.subplot(gs[2:4,:2])
+	teach_x, teach_y = getTwoArrays(teach_path)
+	repeat_x, repeat_y = getTwoArrays(repeat_path)
+	plt.plot(teach_x, teach_y, 'ro', label="teach")
+	plt.plot(repeat_x, repeat_y, 'bo', label="repeat")
+	plt.ylabel('Teach and Repeat path')
+
+	ax3 = plt.subplot(gs[2:4,2:4])
+	plt.axis('off')
+	frame = plt.gca()
+	frame.axes.get_xaxis().set_ticks([])
+	frame.axes.get_yaxis().set_ticks([])
+	y=[1,2,3,4,5,4,3,2,1,1,1,1,1,1,1,1]
+	col_labels=['','Mean','Variance','Median']
+	table_vals=[['Track Error',round(np.mean(tracking_error),3),round(np.var(tracking_error),3),round(np.median(tracking_error),3)],
+				['Velocity',round(np.mean(velocity),3),round(np.var(velocity),3),round(np.median(velocity),3)]]
+	the_table = plt.table(cellText=table_vals,
+	                  colWidths = [0.1]*4,
+	                  colLabels=col_labels,
+	                  loc='center right')
+	the_table.set_fontsize(14)
+	the_table.scale(2.2,3)
+
+	plt.savefig(file_path+"infos.png")
+	plt.close()
+	#Create txt file table.
+	file = open(file_path+"infos.txt", "w")
+	for index in range(-1, len(tracking_error)):
+		createTxtEntry(file, getIndexArray(tracking_error), index, "Index")
+		createTxtEntry(file, time, index, "Time")
+		createTxtEntry(file, distance_start, index, "Start")
+		createTxtEntry(file, distance_end, index, "End")
+		createTxtEntry(file, index_path, index, "InPa")
+		createTxtEntry(file, tracking_error, index, "TraEr")
+		createTxtEntry(file, index_steering, index, "InSte")
+		createTxtEntry(file, steering_angle, index, "Ste")
+		createTxtEntry(file, should_steering_angle, index, "Stesh")
+		createTxtEntry(file, should_safe_steering_angle, index, "Stesaf")
+		createTxtEntry(file, index_velocity, index, "InVel")
+		createTxtEntry(file, radius, index, "Rad")
+		createTxtEntry(file, velocity, index, "Vel")
+		createTxtEntry(file, should_velocity, index, "Velsh")
+		createTxtEntry(file, should_safe_velocity, index, "Velsaf")
+		createTxtEntry(file, velocity_bound_physical, index, "Velphy")
+		createTxtEntry(file, velocity_bound_teach, index, "Veltea")
+		createTxtEntry(file, braking_distance, index, "Brake")
+		createTxtEntry(file, wheel_left, index, "Whle")
+		createTxtEntry(file, wheel_right, index, "Wheri")
+		file.write("\n")
+	file.close()
 
 if __name__ == '__main__':
 	main()
