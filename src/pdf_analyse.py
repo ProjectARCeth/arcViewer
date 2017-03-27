@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import rospy
@@ -12,19 +12,19 @@ from nav_msgs.msg import Path
 from std_msgs.msg import Float64, Float32MultiArray
 
 #Path to latex.
-file_path = "/home/sele/Paths/"
+file_path = str(sys.argv[1])
 #General constants.
-v_freedom = 1.5 #rospy.get_param("/control/V_FREEDOM")
+v_freedom = rospy.get_param("/control/V_FREEDOM")
 #Topic names.
-navigation_info_topic = 'navigation_info' #rospy.get_param("/topic/NAVIGATION_INFO")
-repeat_path_topic = 'path' #rospy.get_param("/topic/PATH")
-state_topic = 'state' #rospy.get_param("/topic/STATE")
-steering_angle_topic = 'state_steering_angle' #rospy.get_param("/topic/STATE_STEERING_ANGLE")
-stellgroessen_topic = 'stellgroessen_safe' #rospy.get_param("/topic/STELLGROESSEN_SAFE")
-teach_path_topic = 'teach_path' #rospy.get_param("/topic/TEACH_PATH")
-tracking_error_topic = 'tracking_error' #rospy.get_param("/topic/TRACKING_ERROR")
-wheel_left_topic = 'wheel_rear_left' #rospy.get_param("/topic/WHEEL_REAR_LEFT")
-wheel_right_topic = 'wheel_rear_right' #rospy.get_param("/topic/WHEEL_REAR_RIGHT")
+navigation_info_topic = rospy.get_param("/topic/NAVIGATION_INFO")
+repeat_path_topic = rospy.get_param("/topic/PATH")
+state_topic = rospy.get_param("/topic/STATE")
+steering_angle_topic = rospy.get_param("/topic/STATE_STEERING_ANGLE")
+stellgroessen_topic = rospy.get_param("/topic/STELLGROESSEN_SAFE")
+teach_path_topic = rospy.get_param("/topic/TEACH_PATH")
+tracking_error_topic = rospy.get_param("/topic/TRACKING_ERROR")
+wheel_left_topic = rospy.get_param("/topic/WHEEL_REAR_LEFT")
+wheel_right_topic = rospy.get_param("/topic/WHEEL_REAR_RIGHT")
 #Init time and array index.
 init_time = 0
 #Information vectors.
@@ -213,26 +213,38 @@ def main():
 	plt.plot(repeat_x, repeat_y, 'bo', label="repeat")
 	plt.ylabel('Teach and Repeat path')
 
-	ax3 = plt.subplot(gs[2:4,2:4])
+	ax3= plt.subplot(gs[2:3,2:4])
 	plt.axis('off')
 	frame = plt.gca()
 	frame.axes.get_xaxis().set_ticks([])
 	frame.axes.get_yaxis().set_ticks([])
-	y=[1,2,3,4,5,4,3,2,1,1,1,1,1,1,1,1]
-	col_labels=['','Mean','Variance','Median']
-	table_vals=[['Track Error',round(np.mean(tracking_error),3),round(np.var(tracking_error),3),round(np.median(tracking_error),3)],
-				['Velocity',round(np.mean(velocity),3),round(np.var(velocity),3),round(np.median(velocity),3)]]
-	the_table = plt.table(cellText=table_vals,
-	                  colWidths = [0.1]*4,
-	                  colLabels=col_labels,
-	                  loc='center right')
-	the_table.set_fontsize(14)
-	the_table.scale(2.2,3)
+	path_vals =[['Time[s]',round(time[len(time)-2],3)],
+				['Distance[m]', round(distance_start[len(distance_start)-2],3)]]
+	path_table = plt.table(cellText=path_vals,
+	                  	   colWidths = [0.1]*2,
+	                       loc='center left')
+	path_table.set_fontsize(14)
+	path_table.scale(2.2,3)
 
-	plt.savefig(file_path+"infos.png")
+	ax4= plt.subplot(gs[3:4,2:4])
+	plt.axis('off')
+	frame = plt.gca()
+	frame.axes.get_xaxis().set_ticks([])
+	frame.axes.get_yaxis().set_ticks([])
+	mean_labels=['','Mean','Variance','Median']
+	mean_vals=[['Track Error',round(np.mean(tracking_error),3),round(np.var(tracking_error),3),round(np.median(tracking_error),3)],
+				['Velocity',round(np.mean(velocity),3),round(np.var(velocity),3),round(np.median(velocity),3)]]
+	mean_table = plt.table(cellText=mean_vals,
+	                  	   colWidths = [0.1]*4,
+	                  	   colLabels=mean_labels,
+	                  	   loc='center left')
+	mean_table.set_fontsize(14)
+	mean_table.scale(2.2,3)
+
+	plt.savefig(file_path+"_infos.png")
 	plt.close()
 	#Create txt file table.
-	file = open(file_path+"infos.txt", "w")
+	file = open(file_path+"_infos.txt", "w")
 	for index in range(-1, len(tracking_error)):
 		createTxtEntry(file, getIndexArray(tracking_error), index, "Index")
 		createTxtEntry(file, time, index, "Time")
