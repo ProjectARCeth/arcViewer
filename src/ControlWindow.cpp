@@ -210,6 +210,8 @@ void ControlWindow::setLaunchable(){
 }
 
 void ControlWindow::shutdown(){
+    QString style_string("background-color:blue;"); 
+    shutdown_button_->setStyleSheet(style_string);
     RosInterface_.shutdown();
 }
 

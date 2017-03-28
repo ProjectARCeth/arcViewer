@@ -14,42 +14,32 @@ from std_msgs.msg import Float64, Float32MultiArray
 #Path to latex.
 file_path = str(sys.argv[1])
 #General constants.
-v_freedom = rospy.get_param("/control/V_FREEDOM")
-#Topic names.
-navigation_info_topic = rospy.get_param("/topic/NAVIGATION_INFO")
-repeat_path_topic = rospy.get_param("/topic/PATH")
-state_topic = rospy.get_param("/topic/STATE")
-steering_angle_topic = rospy.get_param("/topic/STATE_STEERING_ANGLE")
-stellgroessen_topic = rospy.get_param("/topic/STELLGROESSEN_SAFE")
-teach_path_topic = rospy.get_param("/topic/TEACH_PATH")
-tracking_error_topic = rospy.get_param("/topic/TRACKING_ERROR")
-wheel_left_topic = rospy.get_param("/topic/WHEEL_REAR_LEFT")
-wheel_right_topic = rospy.get_param("/topic/WHEEL_REAR_RIGHT")
+v_freedom = 0.0;
 #Init time and array index.
 init_time = 0
 #Information vectors.
-braking_distance = np.random.rand(100)
-distance_end = np.random.rand(100)
-distance_start = np.random.rand(100)
-index_path = np.random.rand(100)
-index_steering = np.random.rand(100)
-index_velocity = np.random.rand(100)
-radius = np.random.rand(100)
-repeat_path = np.random.rand(5, 2)
-should_steering_angle = np.random.rand(100)
-should_velocity = np.random.rand(100)
-should_safe_steering_angle = np.random.rand(100)
-should_safe_velocity = np.random.rand(100)
-steering_angle = np.random.rand(100)
-teach_path = np.random.rand(5, 2)
-time = np.random.rand(100)
-tracking_error = np.random.rand(100)
-velocity = np.random.rand(100)
-velocity_bound_physical = np.random.rand(100)
-velocity_bound_teach = np.random.rand(100)
-velocity_teach = np.random.rand(100)
-wheel_left = np.random.rand(100)
-wheel_right = np.random.rand(100)
+braking_distance = []
+distance_end = []
+distance_start = []
+index_path = []
+index_steering = []
+index_velocity = []
+radius = []
+repeat_path = []
+should_steering_angle = []
+should_velocity = []
+should_safe_steering_angle = []
+should_safe_velocity = []
+steering_angle = []
+teach_path = []
+time = []
+tracking_error = []
+velocity = []
+velocity_bound_physical = []
+velocity_bound_teach = []
+velocity_teach = []
+wheel_left = []
+wheel_right = []
 #Current information.
 current_breaking_distance = 0
 current_distance_end = 0
@@ -153,7 +143,7 @@ def update():
 	should_safe_steering_angle.append(current_should_safe_steering_angle)
 	should_safe_velocity.append(current_should_safe_velocity)
 	steering_angle.append(current_steering_angle)
-	time.append(rospy.get_rostime()-init_time)
+	time.append(rospy.get_time()-init_time)
 	tracking_error.append(current_tracking_error)
 	velocity.append(current_velocity)
 	velocity_bound_physical.append(current_velocity_bound_physical)
@@ -173,14 +163,26 @@ def wheelRightCallback(msg):
 def main():
 	#Init ros.
 	rospy.init_node('analyse_pdf')
-	init_time = rospy.get_rostime()
+	init_time = rospy.get_time()
+	#General constants.
+	v_freedom = rospy.get_param("/control/V_FREEDOM")
+	#Topic names.
+	navigation_info_topic = rospy.get_param("/topic/NAVIGATION_INFO")
+	repeat_path_topic = rospy.get_param("/topic/PATH")
+	state_topic = rospy.get_param("/topic/STATE")
+	steering_angle_topic = rospy.get_param("/topic/STATE_STEERING_ANGLE")
+	stellgroessen_topic = rospy.get_param("/topic/STELLGROESSEN_SAFE")
+	teach_path_topic = rospy.get_param("/topic/TEACH_PATH")
+	tracking_error_topic = rospy.get_param("/topic/TRACKING_ERROR")
+	wheel_left_topic = rospy.get_param("/topic/WHEEL_REAR_LEFT")
+	wheel_right_topic = rospy.get_param("/topic/WHEEL_REAR_RIGHT")
 	#Init Subscriber.
 	rospy.Subscriber(navigation_info_topic, Float32MultiArray, navigationInfoCallback)
 	rospy.Subscriber(repeat_path_topic, Path, repeatPathCallback)
-	rospy.Subscriber(state_topic, State, stateCallback)
+	# rospy.Subscriber(state_topic, State, stateCallback)
 	rospy.Subscriber(steering_angle_topic, Float64, steeringAngleCallback)
 	rospy.Subscriber(stellgroessen_topic, AckermannDrive, stellgroessenCallback)
-	rospy.Subscriber(teach_path_topic, Path, teachPathCallback)
+	# rospy.Subscriber(teach_path_topic, Path, teachPathCallback)
 	rospy.Subscriber(tracking_error_topic, Float64, trackingErrorCallback)
 	rospy.Subscriber(wheel_left_topic, Float64, wheelLeftCallback)
 	rospy.Subscriber(wheel_right_topic, Float64, wheelRightCallback)
