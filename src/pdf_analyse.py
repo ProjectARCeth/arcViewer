@@ -102,7 +102,7 @@ def navigationInfoCallback(msg):
 def repeatPathCallback(msg):
 	repeat_path = []
 	for element in msg.poses:
-		path_element = [element.position.x, element.position.y]
+		path_element = [element.pose.position.x, element.pose.position.y]
 		repeat_path.append(path_element)
 	update()
 
@@ -123,7 +123,7 @@ def stellgroessenCallback(msg):
 def teachPathCallback(msg):
 	teach_path = []
 	for element in msg.poses:
-		path_element = [element.position.x, element.position.y]
+		path_element = [element.pose.position.x, element.pose.position.y]
 		teach_path.append(path_element)
 	update()
 
@@ -179,16 +179,17 @@ def main():
 	#Init Subscriber.
 	rospy.Subscriber(navigation_info_topic, Float32MultiArray, navigationInfoCallback)
 	rospy.Subscriber(repeat_path_topic, Path, repeatPathCallback)
-	# rospy.Subscriber(state_topic, State, stateCallback)
+	rospy.Subscriber(state_topic, State, stateCallback)
 	rospy.Subscriber(steering_angle_topic, Float64, steeringAngleCallback)
 	rospy.Subscriber(stellgroessen_topic, AckermannDrive, stellgroessenCallback)
-	# rospy.Subscriber(teach_path_topic, Path, teachPathCallback)
+	rospy.Subscriber(teach_path_topic, Path, teachPathCallback)
 	rospy.Subscriber(tracking_error_topic, Float64, trackingErrorCallback)
 	rospy.Subscriber(wheel_left_topic, Float64, wheelLeftCallback)
 	rospy.Subscriber(wheel_right_topic, Float64, wheelRightCallback)
 	#Init subscribing loop.
 	rate = rospy.Rate(10)
 	while not rospy.is_shutdown():
+		rospy.spinOnce();
 		rate.sleep()
 	#Create plots.
 	fig = plt.figure(figsize=(10, 7))
