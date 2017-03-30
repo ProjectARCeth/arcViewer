@@ -151,6 +151,7 @@ def update():
 	velocity_teach.append(current_velocity_bound_teach-v_freedom)
 	wheel_left.append(current_wheel_left)
 	wheel_right.append(current_wheel_right)
+	rospy.sleep(0.001)
 
 def wheelLeftCallback(msg):
 	current_wheel_left = msg.data
@@ -187,10 +188,7 @@ def main():
 	rospy.Subscriber(wheel_left_topic, Float64, wheelLeftCallback)
 	rospy.Subscriber(wheel_right_topic, Float64, wheelRightCallback)
 	#Init subscribing loop.
-	rate = rospy.Rate(10)
-	while not rospy.is_shutdown():
-		rospy.spinOnce();
-		rate.sleep()
+	rospy.spin()
 	#Create plots.
 	fig = plt.figure(figsize=(10, 7))
 	gs = gridspec.GridSpec(4, 4)
