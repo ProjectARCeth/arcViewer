@@ -13,6 +13,7 @@ std::string SHUTDOWN_TOPIC;
 std::string STATE_TOPIC;
 std::string STEERING_TOPIC;
 std::string STELLGROESSEN_TOPIC;
+std::string VCU_PING_TOPIC;
 std::string WHEEL_LEFT_TOPIC;
 std::string WHEEL_RIGHT_TOPIC;
 int QUEUE_LENGTH;
@@ -68,12 +69,14 @@ bool RosInterface::init(){
     node.getParam("/topic/TRACKING_ERROR", DEVIATION_TOPIC);
     node.getParam("/topic/TRACKING_ERROR_VELOCITY", DEVIATION_VELOCITY_TOPIC);
     node.getParam("/topic/VCU_LAUNCHING_COMMAND", LAUNCHING_COMMAND_TOPIC);
+    node.getParam("/topic/VCU_WORKING_INTERFACE", VCU_PING_TOPIC);
     node.getParam("/topic/WHEEL_REAR_LEFT", WHEEL_LEFT_TOPIC);
     node.getParam("/topic/WHEEL_REAR_RIGHT", WHEEL_RIGHT_TOPIC);
     //Init publisher and subscriber.
     launch_command_pub_ = node.advertise<std_msgs::Bool>(LAUNCHING_COMMAND_TOPIC, QUEUE_LENGTH);
     notstop_pub_ = node.advertise<std_msgs::Bool>(GUI_NOTSTOP_TOPIC, QUEUE_LENGTH);
     shutdown_pub_ = node.advertise<std_msgs::Bool>(SHUTDOWN_TOPIC, QUEUE_LENGTH);
+    vcu_ping_pub_ = node.advertise<std_msgs::Float64>(VCU_PING_TOPIC, QUEUE_LENGTH);
     deviation_sub_ = node.subscribe(DEVIATION_TOPIC, QUEUE_LENGTH, &RosInterface::devCallback, this);
     deviation_vel_sub_ = node.subscribe(DEVIATION_VELOCITY_TOPIC, QUEUE_LENGTH, &RosInterface::devVelCallback, this);
     obstacle_distance_sub_ = node.subscribe(OBSTACLE_DISTANCE_TOPIC, QUEUE_LENGTH, &RosInterface::obstacleDistanceCallback, this);
@@ -102,6 +105,9 @@ void RosInterface::run(){
 void RosInterface::launching(){
     std::cout << std::endl << "GUI: System launched " << std::endl;
     if(MODE_INIT){
+        std_msgs::Float64 ping_msg;
+        ping_msg.data = 5;
+        vcu_ping_pub_.publish(ping_msg);
         std_msgs::Bool launching_msg;
         launching_msg.data = true;
         launch_command_pub_.publish(launching_msg);

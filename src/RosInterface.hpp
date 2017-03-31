@@ -69,6 +69,7 @@ private:
     ros::Publisher launch_command_pub_;
     ros::Publisher notstop_pub_;
     ros::Publisher shutdown_pub_;
+    ros::Publisher vcu_ping_pub_;
     ros::Subscriber deviation_sub_;
     ros::Subscriber deviation_vel_sub_;
     ros::Subscriber launching_info_sub_;
