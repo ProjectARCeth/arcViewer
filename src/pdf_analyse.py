@@ -65,6 +65,13 @@ class Info:
 		# rospy.Subscriber(teach_path_topic, Path, self.teachPathCallback)
 		rospy.Subscriber(tracking_error_topic, Float64, self.trackingErrorCallback)
 	
+	def createTxtEntryAtIndex(self, index):
+		string = ""
+		for column in range(0,info_list_indexes):
+			string += str(round(self.info_list[index, column], 3))
+			string += "\t"
+		return string
+
 	def getInfoList(self):
 		return self.info_list
 
@@ -136,16 +143,6 @@ class Info:
 		line = self.getLastInfoLine()
 		line[6] = msg.data # Tracking error.
 		self.setNewInfoLine(line) 
-
-def createTxtEntry(file, array, index, name):
-	if(index == -1):
-		string = name
-	else:
-		try:
-			string = str(round(array[index], 4))
-		except Exception, e:
-			pass
-	file.write("\t"+string)
 
 def getIndexArray(array):
 	index_array = []
@@ -229,28 +226,12 @@ if __name__ == '__main__':
 	plt.savefig(file_path+"_infos.png")
 	plt.close()
 	#Create txt file table.
-	# file = open(file_path+"_infos.txt", "w")
-	# for index in range(-1, len(tracking_error)):
-	# 	createTxtEntry(file, getIndexArray(tracking_error), index, "Index")
-	# 	createTxtEntry(file, distance_start, index, "Start")
-	# 	createTxtEntry(file, distance_end, index, "End")
-	# 	createTxtEntry(file, index_path, index, "InPa")
-	# 	createTxtEntry(file, tracking_error, index, "TraEr")
-	# 	createTxtEntry(file, index_steering, index, "InSte")
-	# 	createTxtEntry(file, steering_angle, index, "Ste")
-	# 	createTxtEntry(file, should_steering_angle, index, "Stesh")
-	# 	createTxtEntry(file, should_safe_steering_angle, index, "Stesaf")
-	# 	createTxtEntry(file, index_velocity, index, "InVel")
-	# 	createTxtEntry(file, radius, index, "Rad")
-	# 	createTxtEntry(file, velocity, index, "Vel")
-	# 	createTxtEntry(file, should_velocity, index, "Velsh")
-	# 	createTxtEntry(file, should_safe_velocity, index, "Velsaf")
-	# 	createTxtEntry(file, velocity_bound_physical, index, "Velphy")
-	# 	createTxtEntry(file, velocity_bound_teach, index, "Veltea")
-	# 	createTxtEntry(file, braking_distance, index, "Brake")
-	# 	createTxtEntry(file, wheel_left, index, "Whle")
-	# 	createTxtEntry(file, wheel_right, index, "Wheri")
-	# 	file.write("\n")
-	# file.close()
+	file = open(file_path+"_infos.txt", "w")
+	file.write("InLi\tInPa\tInSt\tInVe\tDiSt\tDiEn\tTrEr\tVel\tVeSh\tVeSa\tVeBP\tVeBT\tVeTe\tStAn\tStSh\tStSa\tBrDi\tRad\n")
+	for index in range(0, len(tracking_error)):
+		string = information.createTxtEntryAtIndex(index)
+		file.write(string)
+		file.write("\n")
+	file.close()
 
 
