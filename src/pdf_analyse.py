@@ -1,4 +1,25 @@
 #!/usr/bin/env python
+'''
+Info List:
+0 - index_list
+1 - index_path
+2 - index_steering
+3 - index_velocity
+4 - distance_start
+5 - distance_end
+6 - tracking_error
+7 - velocity
+8 - should_velocity
+9 - should_safe_velocity
+10 - velocity_bound_physical
+11 - velocity_bound_teach
+12 - velocity_teach
+13 - steering_angle
+14 - should_steering_angle
+15 - should_safe_steering_angle
+16 - braking_distance
+17 - radius
+'''
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,51 +35,107 @@ from std_msgs.msg import Float64, Float32MultiArray
 #Path to latex.
 file_path = str(sys.argv[1])
 #General constants.
-v_freedom = 0.0;
-#Init time and array index.
-init_time = 0
-#Information vectors.
-braking_distance = []
-distance_end = []
-distance_start = []
-index_path = []
-index_steering = []
-index_velocity = []
-radius = []
-repeat_path = []
-should_steering_angle = []
-should_velocity = []
-should_safe_steering_angle = []
-should_safe_velocity = []
-steering_angle = []
-teach_path = []
-time = []
-tracking_error = []
-velocity = []
-velocity_bound_physical = []
-velocity_bound_teach = []
-velocity_teach = []
-wheel_left = []
-wheel_right = []
-#Current information.
-current_breaking_distance = 0
-current_distance_end = 0
-current_distance_start = 0
-current_index_path = 0
-current_index_steering = 0
-current_index_velocity = 0
-current_radius = 0
-current_should_steering_angle = 0
-current_should_velocity = 0
-current_should_safe_steering_angle = 0
-current_should_safe_velocity = 0
-current_steering_angle = 0
-current_tracking_error = 0
-current_velocity = 0
-current_velocity_bound_physical = 0
-current_velocity_bound_teach = 0
-current_wheel_left = 0
-current_wheel_right = 0
+v_freedom = 0.0
+info_list_indexes = 18 # 18 information (0-17).
+#Init ros.
+rospy.init_node('analyse_pdf')
+#General constants.
+v_freedom = rospy.get_param("/control/V_FREEDOM")
+#Topic names.
+navigation_info_topic = rospy.get_param("/topic/NAVIGATION_INFO")
+repeat_path_topic = rospy.get_param("/topic/PATH")
+state_topic = rospy.get_param("/topic/STATE")
+steering_angle_topic = rospy.get_param("/topic/STATE_STEERING_ANGLE")
+stellgroessen_topic = rospy.get_param("/topic/STELLGROESSEN_SAFE")
+teach_path_topic = rospy.get_param("/topic/TEACH_PATH")
+tracking_error_topic = rospy.get_param("/topic/TRACKING_ERROR")
+
+class Info:
+	def __init__(self):
+		# Init lists.
+		self.info_list = np.zeros((1,info_list_indexes))
+		self.repeat_path = []
+		self.teach_path = []
+		#Init Subscriber.
+		rospy.Subscriber(navigation_info_topic, Float32MultiArray, self.navigationInfoCallback)
+		rospy.Subscriber(repeat_path_topic, Path, self.repeatPathCallback)
+		rospy.Subscriber(state_topic, State, self.stateCallback)
+		rospy.Subscriber(steering_angle_topic, Float64, self.steeringAngleCallback)
+		rospy.Subscriber(stellgroessen_topic, AckermannDrive, self.stellgroessenCallback)
+		# rospy.Subscriber(teach_path_topic, Path, self.teachPathCallback)
+		rospy.Subscriber(tracking_error_topic, Float64, self.trackingErrorCallback)
+	
+	def getInfoList(self):
+		return self.info_list
+
+	def getLastInfoLine(self):
+		last_index = self.info_list.size/info_list_indexes - 1
+		last_line = self.info_list[last_index,:].tolist()
+		return last_line
+
+	def getListAtIndex(self, index):
+		array = self.info_list[:,index]
+		return array
+
+	def getRepeatPath(self):
+		return self.repeat_path.tolist()
+
+	def getTeachPath(self):
+		return self.teach_path.tolist()
+
+	def navigationInfoCallback(self, msg):
+		line = self.getLastInfoLine()
+		line[4] = msg.data[0] # Distance start.
+		line[5] = msg.data[1] # Distance end.
+		line[2] = msg.data[2] # Index steering.
+		line[14] = msg.data[3] # Should steering angle.
+		line[3] = msg.data[4] # Index velocity.
+		line[17] = msg.data[5] # Radius.
+		line[10] = msg.data[6] # Velocity bound physical.
+		line[16] = msg.data[7] # Braking distance.
+		line[11] = msg.data[8] # Velocity bound teach.
+		line[12] = msg.data[8] - v_freedom # Velocity teach.
+		line[8] = msg.data[9] # Should velocity.
+		self.setNewInfoLine(line)
+
+	def repeatPathCallback(self, msg):
+		self.repeat_path = np.zeros((1,2))
+		for element in msg.poses:
+			path_element = np.array([element.pose.position.x, element.pose.position.y])
+			self.repeat_path = np.vstack([self.repeat_path, path_element])
+
+	def setNewInfoLine(self, array):
+		array[0] += 1
+		np_array = np.array(array)
+		self.info_list = np.vstack([self.info_list, np_array])
+
+	def stateCallback(self, msg):
+		line = self.getLastInfoLine()
+		line[1] = msg.current_arrayposition # Index path.
+		line[7] = msg.pose_diff # Velocity.
+		self.setNewInfoLine(line)
+
+	def steeringAngleCallback(self, msg):
+		line = self.getLastInfoLine()
+		line[13] = msg.data # Steering angle.
+		self.setNewInfoLine(line)
+
+	def stellgroessenCallback(self, msg):
+		line = self.getLastInfoLine()
+		line[15] = msg.steering_angle # Safe steering angle.
+		line[9] = msg.speed # Safe velocity.
+		self.setNewInfoLine(line)
+		
+	def teachPathCallback(self, msg):
+		self.teach_path = np.zeros((1,2))
+		for element in msg.poses:
+			path_element = np.array([element.pose.position.x, element.pose.position.y])
+			self.teach_path = np.vstack([self.teach_path, path_element])
+
+	def trackingErrorCallback(self, msg):
+		line = self.getLastInfoLine()
+		line[6] = msg.data # Tracking error.
+		self.setNewInfoLine(line) 
 
 def createTxtEntry(file, array, index, name):
 	if(index == -1):
@@ -85,108 +162,10 @@ def getTwoArrays(array):
 		x.append(array[i][0])
 		y.append(array[i][1])
 	return x,y
-
-def navigationInfoCallback(msg):
-	current_distance_start = msg.data[0]
-	current_distance_end = msg.data[1]
-	current_index_steering = msg.data[2]
-	current_should_steering_angle = msg.data[3]
-	current_index_velocity = msg.data[4]
-	current_radius = msg.data[5]
-	current_velocity_bound_physical = msg.data[6]
-	current_breaking_distance = msg.data[7]
-	current_velocity_bound_teach = msg.data[8]
-	current_should_velocity = msg.data[9]
-	update()
-    
-def repeatPathCallback(msg):
-	repeat_path = []
-	for element in msg.poses:
-		path_element = [element.pose.position.x, element.pose.position.y]
-		repeat_path.append(path_element)
-	update()
-
-def stateCallback(msg):
-	current_index_path = msg.current_arrayposition
-	current_velocity = msg.pose_diff
-	update()
-
-def steeringAngleCallback(msg):
-	current_steering_angle = msg.data
-	update()
-
-def stellgroessenCallback(msg):
-	current_should_safe_steering_angle = msg.steering_angle
-	current_should_safe_velocity = msg.speed
-	update()
-
-def teachPathCallback(msg):
-	teach_path = []
-	for element in msg.poses:
-		path_element = [element.pose.position.x, element.pose.position.y]
-		teach_path.append(path_element)
-	update()
-
-def trackingErrorCallback(msg):
-	current_tracking_error = msg.data
-
-def update():
-	braking_distance.append(current_breaking_distance)
-	distance_end.append(current_distance_end)
-	distance_start.append(current_distance_start)
-	index_path.append(current_index_path)
-	index_steering.append(current_index_steering)
-	index_velocity.append(current_index_velocity)
-	radius.append(current_radius)
-	should_steering_angle.append(current_should_steering_angle)
-	should_velocity.append(current_should_velocity)
-	should_safe_steering_angle.append(current_should_safe_steering_angle)
-	should_safe_velocity.append(current_should_safe_velocity)
-	steering_angle.append(current_steering_angle)
-	time.append(rospy.get_time()-init_time)
-	tracking_error.append(current_tracking_error)
-	velocity.append(current_velocity)
-	velocity_bound_physical.append(current_velocity_bound_physical)
-	velocity_bound_teach.append(current_velocity_bound_teach)
-	velocity_teach.append(current_velocity_bound_teach-v_freedom)
-	wheel_left.append(current_wheel_left)
-	wheel_right.append(current_wheel_right)
-	rospy.sleep(0.001)
-
-def wheelLeftCallback(msg):
-	current_wheel_left = msg.data
-	update()
-
-def wheelRightCallback(msg):
-	current_wheel_right = msg.data
-	update()
-
-def main():
-	#Init ros.
-	rospy.init_node('analyse_pdf')
-	init_time = rospy.get_time()
-	#General constants.
-	v_freedom = rospy.get_param("/control/V_FREEDOM")
-	#Topic names.
-	navigation_info_topic = rospy.get_param("/topic/NAVIGATION_INFO")
-	repeat_path_topic = rospy.get_param("/topic/PATH")
-	state_topic = rospy.get_param("/topic/STATE")
-	steering_angle_topic = rospy.get_param("/topic/STATE_STEERING_ANGLE")
-	stellgroessen_topic = rospy.get_param("/topic/STELLGROESSEN_SAFE")
-	teach_path_topic = rospy.get_param("/topic/TEACH_PATH")
-	tracking_error_topic = rospy.get_param("/topic/TRACKING_ERROR")
-	wheel_left_topic = rospy.get_param("/topic/WHEEL_REAR_LEFT")
-	wheel_right_topic = rospy.get_param("/topic/WHEEL_REAR_RIGHT")
-	#Init Subscriber.
-	rospy.Subscriber(navigation_info_topic, Float32MultiArray, navigationInfoCallback)
-	rospy.Subscriber(repeat_path_topic, Path, repeatPathCallback)
-	rospy.Subscriber(state_topic, State, stateCallback)
-	rospy.Subscriber(steering_angle_topic, Float64, steeringAngleCallback)
-	rospy.Subscriber(stellgroessen_topic, AckermannDrive, stellgroessenCallback)
-	rospy.Subscriber(teach_path_topic, Path, teachPathCallback)
-	rospy.Subscriber(tracking_error_topic, Float64, trackingErrorCallback)
-	rospy.Subscriber(wheel_left_topic, Float64, wheelLeftCallback)
-	rospy.Subscriber(wheel_right_topic, Float64, wheelRightCallback)
+	
+if __name__ == '__main__':
+	#Init info class.
+	information = Info()
 	#Init subscribing loop.
 	rospy.spin()
 	#Create plots.
@@ -196,21 +175,26 @@ def main():
 
 	ax0 = plt.subplot(gs[0, :4])
 	plt.title("Path Analysis")
+	tracking_error = information.getListAtIndex(6)
 	index_array = getIndexArray(tracking_error)
-	plt.plot(index_array, tracking_error)
+	plt.plot(tracking_error)
 	plt.ylabel('tracking_error[m]')
 
 	ax1 = plt.subplot(gs[1, :4])
+	velocity = information.getListAtIndex(7)
 	index_base = getIndexArray(velocity)
 	plt.plot(index_base, velocity)
+	velocity_teach = information.getListAtIndex(12)
 	index_target = getIndexArray(velocity_teach)
 	plt.plot(index_target, velocity_teach)
 	plt.ylabel('velocity[m/s]')
 
 	ax2 = plt.subplot(gs[2:4,:2])
-	teach_x, teach_y = getTwoArrays(teach_path)
+	repeat_path = information.getRepeatPath()
+	# teach_path = information.getTeachPath()
+	# teach_x, teach_y = getTwoArrays(teach_path)
 	repeat_x, repeat_y = getTwoArrays(repeat_path)
-	plt.plot(teach_x, teach_y, 'ro', label="teach")
+	# plt.plot(teach_x, teach_y, 'ro', label="teach")
 	plt.plot(repeat_x, repeat_y, 'bo', label="repeat")
 	plt.ylabel('Teach and Repeat path')
 
@@ -219,8 +203,8 @@ def main():
 	frame = plt.gca()
 	frame.axes.get_xaxis().set_ticks([])
 	frame.axes.get_yaxis().set_ticks([])
-	path_vals =[['Time[s]',round(time[len(time)-2],3)],
-				['Distance[m]', round(distance_start[len(distance_start)-2],3)]]
+	distance_start = information.getListAtIndex(4)
+	path_vals =[['Distance[m]', round(max(distance_start),3)]]
 	path_table = plt.table(cellText=path_vals,
 	                  	   colWidths = [0.1]*2,
 	                       loc='center left')
@@ -245,30 +229,28 @@ def main():
 	plt.savefig(file_path+"_infos.png")
 	plt.close()
 	#Create txt file table.
-	file = open(file_path+"_infos.txt", "w")
-	for index in range(-1, len(tracking_error)):
-		createTxtEntry(file, getIndexArray(tracking_error), index, "Index")
-		createTxtEntry(file, time, index, "Time")
-		createTxtEntry(file, distance_start, index, "Start")
-		createTxtEntry(file, distance_end, index, "End")
-		createTxtEntry(file, index_path, index, "InPa")
-		createTxtEntry(file, tracking_error, index, "TraEr")
-		createTxtEntry(file, index_steering, index, "InSte")
-		createTxtEntry(file, steering_angle, index, "Ste")
-		createTxtEntry(file, should_steering_angle, index, "Stesh")
-		createTxtEntry(file, should_safe_steering_angle, index, "Stesaf")
-		createTxtEntry(file, index_velocity, index, "InVel")
-		createTxtEntry(file, radius, index, "Rad")
-		createTxtEntry(file, velocity, index, "Vel")
-		createTxtEntry(file, should_velocity, index, "Velsh")
-		createTxtEntry(file, should_safe_velocity, index, "Velsaf")
-		createTxtEntry(file, velocity_bound_physical, index, "Velphy")
-		createTxtEntry(file, velocity_bound_teach, index, "Veltea")
-		createTxtEntry(file, braking_distance, index, "Brake")
-		createTxtEntry(file, wheel_left, index, "Whle")
-		createTxtEntry(file, wheel_right, index, "Wheri")
-		file.write("\n")
-	file.close()
+	# file = open(file_path+"_infos.txt", "w")
+	# for index in range(-1, len(tracking_error)):
+	# 	createTxtEntry(file, getIndexArray(tracking_error), index, "Index")
+	# 	createTxtEntry(file, distance_start, index, "Start")
+	# 	createTxtEntry(file, distance_end, index, "End")
+	# 	createTxtEntry(file, index_path, index, "InPa")
+	# 	createTxtEntry(file, tracking_error, index, "TraEr")
+	# 	createTxtEntry(file, index_steering, index, "InSte")
+	# 	createTxtEntry(file, steering_angle, index, "Ste")
+	# 	createTxtEntry(file, should_steering_angle, index, "Stesh")
+	# 	createTxtEntry(file, should_safe_steering_angle, index, "Stesaf")
+	# 	createTxtEntry(file, index_velocity, index, "InVel")
+	# 	createTxtEntry(file, radius, index, "Rad")
+	# 	createTxtEntry(file, velocity, index, "Vel")
+	# 	createTxtEntry(file, should_velocity, index, "Velsh")
+	# 	createTxtEntry(file, should_safe_velocity, index, "Velsaf")
+	# 	createTxtEntry(file, velocity_bound_physical, index, "Velphy")
+	# 	createTxtEntry(file, velocity_bound_teach, index, "Veltea")
+	# 	createTxtEntry(file, braking_distance, index, "Brake")
+	# 	createTxtEntry(file, wheel_left, index, "Whle")
+	# 	createTxtEntry(file, wheel_right, index, "Wheri")
+	# 	file.write("\n")
+	# file.close()
 
-if __name__ == '__main__':
-	main()
+
