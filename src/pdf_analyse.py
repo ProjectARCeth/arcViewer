@@ -30,7 +30,7 @@ import sys
 from ackermann_msgs.msg import AckermannDrive
 from arc_msgs.msg import State
 from nav_msgs.msg import Path
-from std_msgs.msg import Float64, Float32MultiArray
+from std_msgs.msg import Bool, Float64, Float32MultiArray
 
 #Path to latex.
 file_path = str(sys.argv[1])
@@ -43,6 +43,7 @@ rospy.init_node('analyse_pdf')
 v_freedom = rospy.get_param("/control/V_FREEDOM")
 #Topic names.
 navigation_info_topic = rospy.get_param("/topic/NAVIGATION_INFO")
+ready_for_driving_topic = rospy.get_param("/topic/VCU_LAUNCHING_COMMAND")
 repeat_path_topic = rospy.get_param("/topic/PATH")
 state_topic = rospy.get_param("/topic/STATE")
 steering_angle_topic = rospy.get_param("/topic/STATE_STEERING_ANGLE")
@@ -54,10 +55,12 @@ class Info:
 	def __init__(self):
 		# Init lists.
 		self.info_list = np.zeros((1,info_list_indexes))
+		self.ready = False
 		self.repeat_path = []
 		self.teach_path = []
 		#Init Subscriber.
 		rospy.Subscriber(navigation_info_topic, Float32MultiArray, self.navigationInfoCallback)
+		rospy.Subscriber(ready_for_driving_topic, Bool, self.readyForDrivingCallback)
 		rospy.Subscriber(repeat_path_topic, Path, self.repeatPathCallback)
 		rospy.Subscriber(state_topic, State, self.stateCallback)
 		rospy.Subscriber(steering_angle_topic, Float64, self.steeringAngleCallback)
@@ -91,19 +94,23 @@ class Info:
 		return self.teach_path.tolist()
 
 	def navigationInfoCallback(self, msg):
-		line = self.getLastInfoLine()
-		line[4] = msg.data[0] # Distance start.
-		line[5] = msg.data[1] # Distance end.
-		line[2] = msg.data[2] # Index steering.
-		line[14] = msg.data[3] # Should steering angle.
-		line[3] = msg.data[4] # Index velocity.
-		line[17] = msg.data[5] # Radius.
-		line[10] = msg.data[6] # Velocity bound physical.
-		line[16] = msg.data[7] # Braking distance.
-		line[11] = msg.data[8] # Velocity bound teach.
-		line[12] = msg.data[8] - v_freedom # Velocity teach.
-		line[8] = msg.data[9] # Should velocity.
-		self.setNewInfoLine(line)
+		if(self.ready):
+			line = self.getLastInfoLine()
+			line[4] = msg.data[0] # Distance start.
+			line[5] = msg.data[1] # Distance end.
+			line[2] = msg.data[2] # Index steering.
+			line[14] = msg.data[3] # Should steering angle.
+			line[3] = msg.data[4] # Index velocity.
+			line[17] = msg.data[5] # Radius.
+			line[10] = msg.data[6] # Velocity bound physical.
+			line[16] = msg.data[7] # Braking distance.
+			line[11] = msg.data[8] # Velocity bound teach.
+			line[12] = msg.data[8] - v_freedom # Velocity teach.
+			line[8] = msg.data[9] # Should velocity.
+			self.setNewInfoLine(line)
+
+	def readyForDrivingCallback(self, msg):
+		if(msg.data): self.ready = True
 
 	def repeatPathCallback(self, msg):
 		self.repeat_path = np.zeros((1,2))
@@ -117,21 +124,24 @@ class Info:
 		self.info_list = np.vstack([self.info_list, np_array])
 
 	def stateCallback(self, msg):
-		line = self.getLastInfoLine()
-		line[1] = msg.current_arrayposition # Index path.
-		line[7] = msg.pose_diff # Velocity.
-		self.setNewInfoLine(line)
+		if(self.ready):
+			line = self.getLastInfoLine()
+			line[1] = msg.current_arrayposition # Index path.
+			line[7] = msg.pose_diff # Velocity.
+			self.setNewInfoLine(line)
 
 	def steeringAngleCallback(self, msg):
-		line = self.getLastInfoLine()
-		line[13] = msg.data # Steering angle.
-		self.setNewInfoLine(line)
+		if(self.ready):
+			line = self.getLastInfoLine()
+			line[13] = msg.data # Steering angle.
+			self.setNewInfoLine(line)
 
 	def stellgroessenCallback(self, msg):
-		line = self.getLastInfoLine()
-		line[15] = msg.steering_angle # Safe steering angle.
-		line[9] = msg.speed # Safe velocity.
-		self.setNewInfoLine(line)
+		if(self.ready):
+			line = self.getLastInfoLine()
+			line[15] = msg.steering_angle # Safe steering angle.
+			line[9] = msg.speed # Safe velocity.
+			self.setNewInfoLine(line)
 		
 	def teachPathCallback(self, msg):
 		self.teach_path = np.zeros((1,2))
@@ -140,9 +150,10 @@ class Info:
 			self.teach_path = np.vstack([self.teach_path, path_element])
 
 	def trackingErrorCallback(self, msg):
-		line = self.getLastInfoLine()
-		line[6] = msg.data # Tracking error.
-		self.setNewInfoLine(line) 
+		if(self.ready):
+			line = self.getLastInfoLine()
+			line[6] = msg.data # Tracking error.
+			self.setNewInfoLine(line) 
 
 def getIndexArray(array):
 	index_array = []
