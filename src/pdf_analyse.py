@@ -115,7 +115,7 @@ class Info:
 	def repeatPathCallback(self, msg):
 		self.repeat_path = np.zeros((1,2))
 		for element in msg.poses:
-			path_element = np.array([element.pose.position.x, element.pose.position.y])
+			path_element = np.array([-element.pose.position.y, element.pose.position.x])
 			self.repeat_path = np.vstack([self.repeat_path, path_element])
 
 	def setNewInfoLine(self, array):
@@ -146,7 +146,7 @@ class Info:
 	def teachPathCallback(self, msg):
 		self.teach_path = np.zeros((1,2))
 		for element in msg.poses:
-			path_element = np.array([element.pose.position.x, element.pose.position.y])
+			path_element = np.array([-element.pose.position.y, element.pose.position.x])
 			self.teach_path = np.vstack([self.teach_path, path_element])
 
 	def trackingErrorCallback(self, msg):
