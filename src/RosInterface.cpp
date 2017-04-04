@@ -108,6 +108,7 @@ void RosInterface::launching(){
         std_msgs::Float64 ping_msg;
         ping_msg.data = 5;
         vcu_ping_pub_.publish(ping_msg);
+        ros::Duration(0.5).sleep();
         std_msgs::Bool launching_msg;
         launching_msg.data = true;
         launch_command_pub_.publish(launching_msg);
