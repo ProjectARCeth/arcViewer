@@ -119,6 +119,7 @@ void RosInterface::notstop(){
     std::cout << std::endl << "GUI: NOTSTOP !!!!!!!!" << std::endl;
     std_msgs::Bool notstop_msg;
     notstop_msg.data = true;
+    std::cout << "Start: " << ros::Time::now() << std::endl;
     for (int i=0; i<MIN_PUBLISH_NOTSTOP_COUNT; ++i) notstop_pub_.publish(notstop_msg);
 }
 
