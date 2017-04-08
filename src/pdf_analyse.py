@@ -41,6 +41,10 @@ info_list_indexes = 18 # 18 information (0-17).
 rospy.init_node('analyse_pdf')
 #General constants.
 v_freedom = rospy.get_param("/control/V_FREEDOM")
+k1_s = rospy.get_param("/control/K1_LAD_S")
+k2_s = rospy.get_param("/control/K2_LAD_S")
+k1_v = rospy.get_param("/control/K1_LAD_V")
+k2_v = rospy.get_param("/control/K2_LAD_V")
 #Topic names.
 navigation_info_topic = rospy.get_param("/topic/NAVIGATION_INFO")
 ready_for_driving_topic = rospy.get_param("/topic/VCU_LAUNCHING_COMMAND")
@@ -213,9 +217,10 @@ if __name__ == '__main__':
 	frame.axes.get_xaxis().set_ticks([])
 	frame.axes.get_yaxis().set_ticks([])
 	distance_start = information.getListAtIndex(4)
-	path_vals =[['Distance[m]', round(max(distance_start),3)]]
+	path_vals =[['Distance[m]', round(max(distance_start),3),'',''],
+	 			['K1_S: '+str(k1_s),'K2_S: '+str(k2_s),'K1_V: '+str(k1_v), 'K2_V: '+str(k2_v)]]
 	path_table = plt.table(cellText=path_vals,
-	                  	   colWidths = [0.1]*2,
+	                  	   colWidths = [0.1]*4,
 	                       loc='center left')
 	path_table.set_fontsize(14)
 	path_table.scale(2.2,3)
