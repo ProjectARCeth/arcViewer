@@ -56,8 +56,8 @@ class Info:
 		# Init lists.
 		self.info_list = np.zeros((1,info_list_indexes))
 		self.ready = False
-		self.repeat_path = []
-		self.teach_path = []
+		self.repeat_path = np.zeros((1,2))
+		self.teach_path = np.zeros((1,2))
 		#Init Subscriber.
 		rospy.Subscriber(navigation_info_topic, Float32MultiArray, self.navigationInfoCallback)
 		rospy.Subscriber(ready_for_driving_topic, Bool, self.readyForDrivingCallback)
@@ -65,7 +65,7 @@ class Info:
 		rospy.Subscriber(state_topic, State, self.stateCallback)
 		rospy.Subscriber(steering_angle_topic, Float64, self.steeringAngleCallback)
 		rospy.Subscriber(stellgroessen_topic, AckermannDrive, self.stellgroessenCallback)
-		# rospy.Subscriber(teach_path_topic, Path, self.teachPathCallback)
+		rospy.Subscriber(teach_path_topic, Path, self.teachPathCallback)
 		rospy.Subscriber(tracking_error_topic, Float64, self.trackingErrorCallback)
 	
 	def createTxtEntryAtIndex(self, index):
@@ -102,10 +102,10 @@ class Info:
 			line[14] = msg.data[3] # Should steering angle.
 			line[3] = msg.data[4] # Index velocity.
 			line[17] = msg.data[5] # Radius.
-			line[10] = msg.data[6] # Velocity bound physical.
+			line[10] = msg.data[6]*3.6 # Velocity bound physical.
 			line[16] = msg.data[7] # Braking distance.
-			line[11] = msg.data[8] # Velocity bound teach.
-			line[12] = msg.data[8] - v_freedom # Velocity teach.
+			line[11] = msg.data[8]*3.6 # Velocity bound teach.
+			line[12] = (msg.data[8] - v_freedom)*3.6 # Velocity teach.
 			line[8] = msg.data[9] # Should velocity.
 			self.setNewInfoLine(line)
 
@@ -127,7 +127,7 @@ class Info:
 		if(self.ready):
 			line = self.getLastInfoLine()
 			line[1] = msg.current_arrayposition # Index path.
-			line[7] = msg.pose_diff # Velocity.
+			line[7] = msg.pose_diff*3.6 # Velocity.
 			self.setNewInfoLine(line)
 
 	def steeringAngleCallback(self, msg):
@@ -191,22 +191,23 @@ if __name__ == '__main__':
 	ax1 = plt.subplot(gs[1, :4])
 	velocity = information.getListAtIndex(7)
 	index_base = getIndexArray(velocity)
-	plt.plot(index_base, velocity)
+	plt.plot(index_base, velocity, 'b', label="repeat")
 	velocity_teach = information.getListAtIndex(12)
 	index_target = getIndexArray(velocity_teach)
-	plt.plot(index_target, velocity_teach)
-	plt.ylabel('velocity[m/s]')
+	plt.plot(index_target, velocity_teach, 'g', label="teach")
+	plt.ylabel('velocity[km/h]')
+	# plt.legend(bbox_to_anchor=(0.,1.02,1.,.102),loc=2,ncol=2)
 
 	ax2 = plt.subplot(gs[2:4,:2])
 	repeat_path = information.getRepeatPath()
-	# teach_path = information.getTeachPath()
-	# teach_x, teach_y = getTwoArrays(teach_path)
+	teach_path = information.getTeachPath()
+	teach_x, teach_y = getTwoArrays(teach_path)
 	repeat_x, repeat_y = getTwoArrays(repeat_path)
-	# plt.plot(teach_x, teach_y, 'ro', label="teach")
+	plt.plot(teach_x, teach_y, 'go', label="teach")
 	plt.plot(repeat_x, repeat_y, 'bo', label="repeat")
 	plt.ylabel('Teach and Repeat path')
-
-	ax3= plt.subplot(gs[2:3,2:4])
+	
+	ax3 = plt.subplot(gs[2:3,2:4])
 	plt.axis('off')
 	frame = plt.gca()
 	frame.axes.get_xaxis().set_ticks([])
