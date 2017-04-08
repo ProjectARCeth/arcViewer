@@ -242,6 +242,14 @@ if __name__ == '__main__':
 
 	plt.savefig(file_path+"_infos.png")
 	plt.close()
+
+	#Create bigger paths.
+	fig2 = plt.figure(figsize=(20, 14))
+	plt.plot(teach_x, teach_y, 'go', label="teach")
+	plt.plot(repeat_x, repeat_y, 'bo', label="repeat")
+	plt.savefig(file_path+"_path.png")
+	plt.close()
+	
 	#Create txt file table.
 	file = open(file_path+"_infos.txt", "w")
 	file.write("InLi\tInPa\tInSt\tInVe\tDiSt\tDiEn\tTrEr\tVel\tVeSh\tVeSa\tVeBP\tVeBT\tVeTe\tStAn\tStSh\tStSa\tBrDi\tRad\n")
