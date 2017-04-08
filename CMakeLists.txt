@@ -10,7 +10,7 @@ catkin_package(
   DEPENDS system-lib
 )
 
-qt5_add_resources(QT_RESOURCES_CPP qt_resources/stop.qrc)
+qt5_add_resources(QT_RESOURCES_CPP qt_resources/stop.qrc qt_resources/arc.qrc)
 qt5_wrap_cpp(QT_MOC_HPP src/ControlWindow.hpp
 						src/RosInterface.hpp)
 
