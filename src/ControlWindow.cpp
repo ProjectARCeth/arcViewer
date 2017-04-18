@@ -330,7 +330,7 @@ void ControlWindow::setLaunchingProgrammsDisplay(){
    if(USE_CONTROLLING && INIT_MODE) setUpLaunchableProgrammBox(controlling_box_, "CONT");
    if(USE_GPS) setUpLaunchableProgrammBox(gps_box_, "GPS");
    if(USE_NI_CLIENT) setUpLaunchableProgrammBox(ni_client_box_, "NI");
-   if(USE_OBSTACLE_DETECTION && INIT_MODE) setUpLaunchableProgrammBox(obstacle_detection_box_, "OBSTACLES");
+   if(USE_OBSTACLE_DETECTION && INIT_MODE) setUpLaunchableProgrammBox(obstacle_detection_box_, "OBSDT");
    if(USE_GUARD && INIT_MODE) setUpLaunchableProgrammBox(guard_box_, "GUARD");
    if(USE_STATE_ESTIMATION){
     setUpLaunchableProgrammBox(rovio_box_, "ROVIO");
