@@ -53,12 +53,12 @@ public:
                                 bool state_estimation, bool orbslam);
     Q_SIGNAL void newLaunching2(bool controlling, bool ni_client, bool obstacle_detection, bool guard);
     Q_SIGNAL void newNotstop();
-    Q_SIGNAL void newPathInfo(float dis_begin, float dis_end, float radius, float ref_steering);
+    Q_SIGNAL void newPathInfo(float dis_start, float dis_end, float x_local, float y_local);
     Q_SIGNAL void newSteering(double angle);
     Q_SIGNAL void newState(double x, double y, double velocity, int array_position);
     Q_SIGNAL void newStellgroessen(double vel_should, double steering_should);
     Q_SIGNAL void newVelDev(double vel_deviation);
-    Q_SIGNAL void newVelInfo(float ref_vel, float bound_phys, float braking_dis, float bound_teach);
+    Q_SIGNAL void newVelInfo(float v_ref, float bound_phys, float bound_teach, float v_final);
     Q_SIGNAL void newWheelLeft(double wheel_left);
     Q_SIGNAL void newWheelRight(double wheel_right);
 

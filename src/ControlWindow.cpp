@@ -43,14 +43,14 @@ ControlWindow::ControlWindow(int argc, char **argv, QWidget *parent)
     obstacle_dis_display_ = new QLineEdit();
     distance_start_display_ = new QLineEdit();
     distance_end_display_ = new QLineEdit();
-    steering_reference_index_display_ = new QLineEdit();
+    xlocal_display_ = new QLineEdit();
     steering_should_display_ = new QLineEdit();
-    radius_reference_index_display_ = new QLineEdit();
+    ylocal_display_ = new QLineEdit();
     radius_path_display_ = new QLineEdit();
     velocity_bound_physical_display_ = new QLineEdit();
     velocity_bound_teach_display_ = new QLineEdit();
     velocity_should_display_ = new QLineEdit();
-    braking_distance_display_ = new QLineEdit();
+    v_final_display_ = new QLineEdit();
     steering_ist_display_ = new QLineEdit();
     wheel_left_display_ = new QLineEdit();
     wheel_right_display_ = new QLineEdit();
@@ -127,9 +127,8 @@ void ControlWindow::buildInterface(bool mode){
     setUpDisplay(y_pose_display_, "Y Position", middleLeftLayout, cyan, black); 
     if(mode){
         setUpDisplay(array_pose_display_, "Array Position", middleCenterLayout, magenta, black);
-        setUpDisplay(radius_reference_index_display_, "Radius ref", middleCenterLayout, magenta, black);
-        setUpDisplay(steering_reference_index_display_, "Steering ref", middleCenterLayout, magenta, black);
-        setUpDisplay(radius_path_display_, "Radius path", middleCenterLayout, magenta, black);
+        setUpDisplay(xlocal_display_, "X_Local", middleCenterLayout, magenta, black);
+        setUpDisplay(ylocal_display_, "Y_Local", middleCenterLayout, magenta, black);
         setUpDisplay(velocity_bound_physical_display_, "Vel bound phys", middleCenterLayout, magenta, black);
         setUpDisplay(velocity_bound_teach_display_, "Vel bound teach", middleCenterLayout, magenta, black);
     }           
@@ -138,7 +137,7 @@ void ControlWindow::buildInterface(bool mode){
         setUpDisplay(distance_end_display_, "Distance end", middleRightLayout, yellow, black);
     }
     if(mode){
-        setUpDisplay(braking_distance_display_, "Braking distance", middleRightLayout, red, black);
+        setUpDisplay(v_final_display_, "Vel final", middleRightLayout, red, black);
         setUpDisplay(obstacle_dis_display_, "Obstacle distance", middleRightLayout, red, black);
         setUpDisplay(dev_display_, "Path deviation", middleRightLayout, red, black);
         setUpDisplay(vel_dev_display_, "Vel deviation", middleRightLayout, red, black);
@@ -251,16 +250,16 @@ void ControlWindow::updateObstacleDisDisplay(double distance){
     obstacle_dis_display_->setText(obs_dis);
 }
 
-void ControlWindow::updatePathInfoDisplay(float dis_begin, float dis_end, float radius, float ref_steering){
-    QString dis_begin_string, dis_end_string, radius_string, ref_steering_string;
-    dis_begin_string.setNum(dis_begin);
+void ControlWindow::updatePathInfoDisplay(float dis_start, float dis_end, float x_local, float y_local){
+    QString dis_begin_string, dis_end_string, xlocal_string, ylocal_string;
+    dis_begin_string.setNum(dis_start);
     dis_end_string.setNum(dis_end);
-    radius_string.setNum(radius);
-    ref_steering_string.setNum(ref_steering);
+    xlocal_string.setNum(x_local);
+    ylocal_string.setNum(y_local);
     distance_start_display_->setText(dis_begin_string);
     distance_end_display_->setText(dis_end_string);
-    radius_path_display_->setText(radius_string);
-    steering_reference_index_display_->setText(ref_steering_string);
+    xlocal_display_->setText(xlocal_string);
+    ylocal_display_->setText(ylocal_string);
 }
 
 void ControlWindow::updateStateDisplay(double x, double y, double velocity, int array_position){
@@ -289,15 +288,14 @@ void ControlWindow::updateStellgroessenDisplay(double vel_should, double steerin
     steering_should_display_->setText(steering_should_string);
 }
 
-void ControlWindow::updateVelInfoDisplay(float ref_vel, float bound_phys, float braking_dis, float bound_teach){
-    QString ref_vel_string, bound_phys_string, braking_dis_string, bound_teach_string;
-    ref_vel_string.setNum(ref_vel);
+void ControlWindow::updateVelInfoDisplay(float v_ref, float bound_phys, float bound_teach, float v_final){
+    QString ref_vel_string, bound_phys_string, v_final_string, bound_teach_string;
+    ref_vel_string.setNum(v_ref);
     bound_phys_string.setNum(bound_phys);
-    braking_dis_string.setNum(braking_dis);
     bound_teach_string.setNum(bound_teach);
-    radius_reference_index_display_->setText(ref_vel_string);
+    v_final_string.setNum(v_final);
     velocity_bound_physical_display_->setText(bound_phys_string);
-    braking_distance_display_->setText(braking_dis_string);
+    v_final_display_->setText(v_final_string);
     velocity_bound_teach_display_->setText(bound_teach_string);
 }
 

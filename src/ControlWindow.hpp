@@ -68,12 +68,12 @@ private:
     //Pure pursuit infos.
     QLineEdit *distance_start_display_;
     QLineEdit *distance_end_display_;
-    QLineEdit *steering_reference_index_display_;
-    QLineEdit *radius_reference_index_display_;
+    QLineEdit *ylocal_display_;
+    QLineEdit *xlocal_display_;
     QLineEdit *radius_path_display_;
     QLineEdit *velocity_bound_physical_display_;
     QLineEdit *velocity_bound_teach_display_;
-    QLineEdit *braking_distance_display_;
+    QLineEdit *v_final_display_;
     //Steering information.
     QLineEdit *steering_ist_display_;
     //Wheel sensor information.

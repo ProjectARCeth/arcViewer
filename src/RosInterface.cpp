@@ -184,11 +184,11 @@ void RosInterface::purePursuitCallback(const std_msgs::Float32MultiArray::ConstP
     QMutex * pMutex = new QMutex();
     pMutex->lock();
     float info[10];
-    for (int i = 0; i <= 9; ++i) info[i] = msg->data[i];
+    for (int i = 0; i <= 7; ++i) info[i] = msg->data[i];
     pMutex->unlock();
     delete pMutex;
-    Q_EMIT newPathInfo(info[0], info[1], info[5], info[2]);
-    Q_EMIT newVelInfo(info[4], info[6], info[7], info[8]);
+    Q_EMIT newPathInfo(info[0], info[1], info[2], info[3]);
+    Q_EMIT newVelInfo(10.0, info[5], info[6], info[7]);
 }
 
 void RosInterface::readyForLaunchingCallback(const std_msgs::Bool::ConstPtr& msg){
