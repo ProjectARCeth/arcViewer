@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style type="text/css">
+      html, body { height: 100%; margin: 0; padding: 0; }
+      #map { height: 100%; }
+    </style>
+
+<!-- Based on demo found here:
+http://wiki.ros.org/roslibjs/Tutorials/BasicRosFunctionality
+http://wiki.ros.org/roslibjs/Tutorials/BasicRosFunctionality
+-->
+
+<!--
+The next two lines bring in the JavaScript files that support rosbridge integration.
+-->
+<script type="text/javascript" src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+<script type="text/javascript" src="http://cdn.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+
+  </head>
+  <body>
+  <body onload="initMap()">
+    <h1>PROJECT ARC</h1>
+    <div id="map"></div>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBk9oS-Vy-IqL_iih5Nb9Nv7qACviTZzqE&callback=initMap"></script>
+    <script type="text/javascript">
+
+//function checkAgain(){
+var myLatLng = {lat: 46.868392, lng: 8.855613}; 
+var myLatLng_new = {lat: 46.868392, lng: 8.855613};
+var map;
+var marker;
+var RED = "#FF0000";
+var GREEN = "#32CD32";
+var BLUE =  "#191970";
+var ACT_STATUS = BLUE;
+var autonomousPath;
+//var map;
+//var marker;
+function initMap() {
+
+  map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 18,
+          center: myLatLng,
+          mapTypeControl: true,
+          mapTypeControlOptions: {
+              style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+              position: google.maps.ControlPosition.TOP_CENTER
+          },
+          zoomControl: true,
+          zoomControlOptions: {
+              position: google.maps.ControlPosition.LEFT_CENTER
+          },
+          scaleControl: true,
+          streetViewControl: true,
+          streetViewControlOptions: {
+              position: google.maps.ControlPosition.LEFT_TOP
+          },
+          fullscreenControl: true
+        });
+      //addPoint();
+
+      marker = new google.maps.Marker({
+        position: myLatLng,
+        map: map,
+        draggable: false,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            strokeColor: ACT_STATUS,
+          }});
+
+
+          autonomousPath = new google.maps.Polyline({
+          path: [myLatLng, myLatLng],
+          strokeColor: ACT_STATUS
+        });
+    autonomousPath.setMap(map);
+
+  }
+
+//}
+
+// Connecting to ROS
+			var ros = new ROSLIB.Ros({
+				url : 'ws://' + 'localhost' + ':9090'
+			});
+
+			ros.on('connection', function() {
+				console.log('Connected to websocket server.');
+			});
+
+			ros.on('error', function(error) {
+				console.log('Error connecting to websocket server: ', error);
+			});
+
+			ros.on('close', function() {
+				console.log('Connection to websocket server closed.');
+			});
+
+// Subscribing to a Topic
+
+			/*var printJSON = function(message) {
+				if(message)
+					//console.log(JSON.stringify(message));
+					console.log('Longitude: ' + message.longitude + ', Latitude: ' + message.latitude);
+					myLatLng = {lat: message.latitude , lng: message.longitude};
+
+			};*/
+			var gps_listener = new ROSLIB.Topic({
+				ros : ros,
+				name : '/gps/fix',
+				messageType : 'sensor_msgs/NavSatFix',
+				throttle_rate : 1000
+			});
+			
+			//gps_listener.subscribe(printJSON);
+			console.log('HERE');
+			gps_listener.subscribe(function(message) {
+  		    console.log('Longitude: ' + message.longitude + ', Latitude: ' + message.latitude);
+			myLatLng_new = new google.maps.LatLng({lat: message.latitude , lng: message.longitude});
+	  marker.setPosition(myLatLng_new);
+	  var path = autonomousPath.getPath();
+	  path.push(myLatLng_new);
+      myLatLng=myLatLng_new;	
+			});
+
+
+
+    </script>
+
+  </body>
+</html>
